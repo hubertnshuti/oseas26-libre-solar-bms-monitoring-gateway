@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.log
+*.sqlite
+*.sqlite-*
+.DS_Store
+Thumbs.db
+
+*:Zone.Identifier
