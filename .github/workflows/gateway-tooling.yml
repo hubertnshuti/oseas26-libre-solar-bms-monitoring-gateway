@@ -1,0 +1,35 @@
+name: Gateway checks
+
+on:
+  pull_request:
+    branches: [team/bms-monitoring]
+  push:
+    branches: [team/bms-monitoring, chore/gateway-tooling]
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run format:check
+
+      - name: Run tests when test files exist
+        if: hashFiles('tests/**/*.test.ts') != ''
+        run: npm test
+
+      - name: Report pending contract tests
+        if: hashFiles('tests/**/*.test.ts') == ''
+        run: echo "Contract tests are pending A02; no application tests ran." >> "$GITHUB_STEP_SUMMARY"
