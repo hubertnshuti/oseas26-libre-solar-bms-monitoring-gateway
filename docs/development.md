@@ -194,8 +194,8 @@ git switch -c "$TASK_BRANCH"
 3. Edit the files needed by the task. Agree shared schema, API, dependency, and
    deployment changes with the affected contributors before implementing them.
 4. Run the relevant checks. For gateway work, run `npm run typecheck`,
-   `npm run format:check`, and `npm test` when test files exist. No tests found is
-   not evidence that a feature passed. For MPM, use its documented backend or
+   `npm run format:check`, and `npm test`. The contract validation tests are now
+   present and required by CI. For MPM, use its documented backend or
    frontend checks. Record the exact commands and results.
 5. Inspect and select only the intended files:
 

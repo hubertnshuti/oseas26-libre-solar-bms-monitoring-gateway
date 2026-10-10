@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:libresolar:bms:v1:attributes",
+  "title": "Libre Solar BMS v1 attributes",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "node_id": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/node_id"
+    },
+    "source": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/source"
+    },
+    "session_id": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/uuid"
+    },
+    "sequence": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/counter"
+    },
+    "message_id": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/message_id"
+    },
+    "observed_at": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/timestamp"
+    },
+    "published_at": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/timestamp"
+    },
+    "clock_source": {
+      "enum": ["simulator_host", "gateway_host", "device"]
+    },
+    "manufacturer": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "device_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "hardware_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "firmware_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "profile_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "chemistry": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "firmware_reference": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "capacity_ah": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "cell_count": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 16
+    },
+    "cell_channels": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 15
+      },
+      "minItems": 1,
+      "maxItems": 16,
+      "uniqueItems": true
+    },
+    "temperature_sensor_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3
+    },
+    "temperature_sensor_channels": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2
+      },
+      "maxItems": 3,
+      "uniqueItems": true
+    },
+    "supported_fields": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "balancing_mask",
+          "bms_state",
+          "bms_state_code",
+          "cell_temperature_max",
+          "cell_temperatures",
+          "cell_voltage_avg_reported",
+          "cell_voltage_delta",
+          "cell_voltage_max_reported",
+          "cell_voltage_min_reported",
+          "cell_voltages",
+          "component_temperature_max",
+          "cycle_count",
+          "error_flags",
+          "faults",
+          "ic_temperature",
+          "mosfet_temperature",
+          "pack_current",
+          "pack_voltage_reported",
+          "shunt_temperature",
+          "soc",
+          "soh",
+          "stack_voltage_reported"
+        ]
+      },
+      "maxItems": 22,
+      "uniqueItems": true
+    },
+    "simulation_time_factor": {
+      "type": ["number", "null"],
+      "exclusiveMinimum": 0
+    }
+  },
+  "required": [
+    "schema_version",
+    "node_id",
+    "source",
+    "session_id",
+    "sequence",
+    "message_id",
+    "observed_at",
+    "published_at",
+    "clock_source",
+    "manufacturer",
+    "device_type",
+    "hardware_version",
+    "firmware_version",
+    "profile_id",
+    "chemistry",
+    "firmware_reference",
+    "capacity_ah",
+    "cell_count",
+    "cell_channels",
+    "temperature_sensor_count",
+    "temperature_sensor_channels",
+    "supported_fields",
+    "simulation_time_factor"
+  ],
+  "additionalProperties": false
+}
