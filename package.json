@@ -6,7 +6,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "format:check": "prettier --check package.json package-lock.json tsconfig.json vitest.config.ts .github/workflows/gateway-tooling.yml docs/development.md"
+    "format:check": "prettier --check README.md package.json package-lock.json tsconfig.json vitest.config.ts app lib tests docs .github/workflows/gateway-tooling.yml"
   },
   "devDependencies": {
     "@types/node": "24.19.1",
