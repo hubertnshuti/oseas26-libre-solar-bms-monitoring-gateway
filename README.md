@@ -84,7 +84,7 @@ working simulator, MQTT connection, MPM integration or restart recovery.
 The [message contract v1](docs/message-contract.md),
 [MPM API agreement](docs/api-contract.md), schemas and
 [versioned fixtures](tests/fixtures/v1/README.md) are ready for component review.
-The [decision record](docs/decisions/0002-message-contract-v1.md) tracks pending
+The [decision record](docs/decisions/0001-message-contract-v1.md) tracks pending
 owner questions and the review required before freezing the first slice.
 
 ## Project references

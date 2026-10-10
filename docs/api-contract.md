@@ -165,4 +165,4 @@ Member 3 must prove tenant isolation with two companies sharing the same node
 string, route resolver behavior, provisioning, concurrent duplicates/conflicts,
 ordering and status-check ageing. Member 4 reviews read examples and wording.
 The pending decisions and fallbacks are in
-[the contract decision record](decisions/0002-message-contract-v1.md).
+[the contract decision record](decisions/0001-message-contract-v1.md).
