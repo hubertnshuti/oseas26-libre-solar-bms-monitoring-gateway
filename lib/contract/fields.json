@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "firmware_reference": "779d20199bff2666e01371ce2f562dcda4d6bda3",
+  "fields": {
+    "pack_voltage_reported": {
+      "raw_path": "Meas/rPackVoltage_V",
+      "object_id": "0x71",
+      "unit": "V",
+      "meaning": "reported name; terminal interpretation unresolved"
+    },
+    "stack_voltage_reported": {
+      "raw_path": "Meas/rStackVoltage_V",
+      "object_id": "0x72",
+      "unit": "V",
+      "meaning": "conditional switches support; preserve reported name"
+    },
+    "pack_current": {
+      "raw_path": "Meas/rPackCurrent_A",
+      "object_id": "0x73",
+      "unit": "A",
+      "meaning": "positive charging, negative discharging; conditional switches support"
+    },
+    "cell_temperatures": {
+      "raw_path": "Meas/rCellTemps_degC",
+      "object_id": "0x74",
+      "unit": "degC",
+      "meaning": "configured sensor positions; preserve unavailable entries"
+    },
+    "ic_temperature": {
+      "raw_path": "Meas/rICTemp_degC",
+      "object_id": "0x75",
+      "unit": "degC",
+      "meaning": "monitoring chip temperature"
+    },
+    "mosfet_temperature": {
+      "raw_path": "Meas/rMOSFETTemp_degC",
+      "object_id": "0x77",
+      "unit": "degC",
+      "meaning": "conditional switches support"
+    },
+    "shunt_temperature": {
+      "raw_path": "Meas/rShuntTemp_degC",
+      "object_id": "0x78",
+      "unit": "degC",
+      "meaning": "conditional sensor; unsupported in demo profile"
+    },
+    "soc": {
+      "raw_path": "Meas/rSOC_pct",
+      "object_id": "0x7C",
+      "unit": "%",
+      "meaning": "state of charge; not state of health"
+    },
+    "error_flags": {
+      "raw_path": "Meas/rErrorFlags",
+      "object_id": "0x7E",
+      "unit": "bitmask",
+      "meaning": "unsigned uint32; null is not clear"
+    },
+    "bms_state_code": {
+      "raw_path": "Meas/rBmsState",
+      "object_id": "0x7F",
+      "unit": null,
+      "meaning": "uint8; preserve unknown future codes"
+    },
+    "cell_voltages": {
+      "raw_path": "Meas/rCellVoltages_V",
+      "object_id": "0x80",
+      "unit": "V",
+      "meaning": "compact logical cells; channel mapping is explicit"
+    },
+    "cell_voltage_avg_reported": {
+      "raw_path": "Meas/rCellAvgVoltage_V",
+      "object_id": "0x81",
+      "unit": "V",
+      "meaning": "firmware aggregate; do not substitute our own"
+    },
+    "cell_voltage_min_reported": {
+      "raw_path": "Meas/rCellMinVoltage_V",
+      "object_id": "0x82",
+      "unit": "V",
+      "meaning": "firmware aggregate"
+    },
+    "cell_voltage_max_reported": {
+      "raw_path": "Meas/rCellMaxVoltage_V",
+      "object_id": "0x83",
+      "unit": "V",
+      "meaning": "firmware aggregate"
+    },
+    "balancing_mask": {
+      "raw_path": "Meas/rBalancingStatus",
+      "object_id": "0x84",
+      "unit": "bitmask",
+      "meaning": "hardware channels, not compact array positions"
+    },
+    "bms_state": {
+      "raw_path": null,
+      "object_id": null,
+      "unit": null,
+      "meaning": "OFF, CHG, DIS, NORMAL, SHUTDOWN, unknown, or null"
+    },
+    "faults": {
+      "raw_path": null,
+      "object_id": null,
+      "unit": null,
+      "meaning": "lexicographically sorted decoded codes, including unknown bits 15-31"
+    },
+    "cell_voltage_delta": {
+      "raw_path": null,
+      "object_id": null,
+      "unit": "V",
+      "meaning": "max minus min of all configured valid cells; null when incomplete"
+    },
+    "cell_temperature_max": {
+      "raw_path": null,
+      "object_id": null,
+      "unit": "degC",
+      "meaning": "all configured battery sensors; null when incomplete"
+    },
+    "component_temperature_max": {
+      "raw_path": null,
+      "object_id": null,
+      "unit": "degC",
+      "meaning": "supported IC/MOSFET/shunt sensors; null when incomplete"
+    },
+    "soh": {
+      "raw_path": null,
+      "object_id": null,
+      "unit": "%",
+      "meaning": "unsupported in pinned firmware; explicit null"
+    },
+    "cycle_count": {
+      "raw_path": null,
+      "object_id": null,
+      "unit": "count",
+      "meaning": "unsupported in pinned firmware; explicit null"
+    }
+  }
+}

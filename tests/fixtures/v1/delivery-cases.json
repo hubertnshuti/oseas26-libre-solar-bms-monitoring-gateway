@@ -1,0 +1,24 @@
+[
+  {
+    "name": "duplicate event",
+    "kind": "event",
+    "files": ["valid/fault.event.json", "valid/fault.event.json"],
+    "expected": ["accepted", "duplicate"],
+    "retained": [false, false]
+  },
+  {
+    "name": "out-of-order telemetry",
+    "kind": "telemetry",
+    "files": ["valid/fault.telemetry.json", "valid/normal.telemetry.json"],
+    "expected": ["new", "ignored_stale"],
+    "retained": [false, false]
+  },
+  {
+    "name": "retained old summary",
+    "kind": "summary",
+    "files": ["valid/normal.summary.json"],
+    "expected": ["last_known_only"],
+    "retained": [true],
+    "received_at": "2026-10-08T14:10:00.000Z"
+  }
+]

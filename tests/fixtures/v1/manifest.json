@@ -1,0 +1,43 @@
+{
+  "contract_version": 1,
+  "reference": "OSEAS BMS project reference v0.1, sections 6-8 and 10",
+  "provenance": "Constructed software fixtures, not captured hardware readings.",
+  "valid": [
+    "normal.telemetry",
+    "fault.telemetry",
+    "cleared.telemetry",
+    "unavailable.telemetry",
+    "unsupported.telemetry",
+    "unknown-bit-31.telemetry",
+    "zero-cell.telemetry",
+    "unknown-state.telemetry",
+    "normal.summary",
+    "fault.event",
+    "cleared.event",
+    "first-observed.event",
+    "gap.event",
+    "demo.attributes",
+    "fresh.status",
+    "stored.event-receipt"
+  ],
+  "invalid": [
+    "numeric-string.telemetry",
+    "unknown-version.telemetry",
+    "bad-node.telemetry",
+    "oversized-array.telemetry",
+    "wrong-quality.telemetry",
+    "null-as-zero.telemetry",
+    "wrong-faults.telemetry",
+    "bad-time.telemetry",
+    "wrong-id.telemetry",
+    "unknown-field.telemetry",
+    "null-without-quality.telemetry",
+    "safe-integer.telemetry",
+    "zero-substitution.telemetry",
+    "bad-transition.event",
+    "bad-receipt.event-receipt",
+    "mismatched-count.attributes",
+    "bad-status-id.status"
+  ],
+  "php_copy_rule": "Copy this versioned directory and lib/contract/schema from one published gateway commit; record that full commit and SHA-256 checksums in the PHP repository. Do not edit copied payloads independently."
+}

@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [team/bms-monitoring]
   push:
-    branches: [team/bms-monitoring, chore/gateway-tooling]
+    branches: [team/bms-monitoring, feat/message-contract]
 
 permissions:
   contents: read
@@ -26,10 +26,4 @@ jobs:
       - run: npm run typecheck
       - run: npm run format:check
 
-      - name: Run tests when test files exist
-        if: hashFiles('tests/**/*.test.ts') != ''
-        run: npm test
-
-      - name: Report pending contract tests
-        if: hashFiles('tests/**/*.test.ts') == ''
-        run: echo "Contract tests are pending A02; no application tests ran." >> "$GITHUB_STEP_SUMMARY"
+      - run: npm test

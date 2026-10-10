@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "node_id": "53494D0000000001",
+  "source": "simulator",
+  "session_id": "15f75ec4-29ab-48ab-93be-81d3e0708a68",
+  "sequence": 121,
+  "message_id": "53494D0000000001:15f75ec4-29ab-48ab-93be-81d3e0708a68:summary:121",
+  "observed_at": "2026-10-08T14:00:00.000Z",
+  "published_at": "2026-10-08T14:00:00.000Z",
+  "clock_source": "simulator_host",
+  "soc": 74.2,
+  "soh": null,
+  "cycle_count": null,
+  "cell_voltage_delta": 0.006,
+  "cell_temperature_max": 28.1,
+  "component_temperature_max": 35.6,
+  "bms_state_code": 3,
+  "bms_state": "NORMAL",
+  "error_flags": 0,
+  "faults": [],
+  "quality": {
+    "soh": "unsupported",
+    "cycle_count": "unsupported"
+  },
+  "telemetry_message_id": "53494D0000000001:15f75ec4-29ab-48ab-93be-81d3e0708a68:telemetry:120",
+  "last_source_observed_at": "2026-10-08T14:00:00.000Z"
+}

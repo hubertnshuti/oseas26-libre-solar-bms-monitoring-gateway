@@ -77,9 +77,15 @@ not added by this layout change.
 ## Checks
 
 `npm run typecheck` checks TypeScript. `npm run format:check` checks formatting
-in the gateway source and documentation. `npm test` runs the existing test suite;
-before test files exist, its "No tests found" result is not a passed feature test.
-Directory placeholders do not count as tests or working services.
+in the gateway source and documentation. `npm test` runs the contract validation
+suite. These tests cover message shapes and semantic rules; they do not prove a
+working simulator, MQTT connection, MPM integration or restart recovery.
+
+The [message contract v1](docs/message-contract.md),
+[MPM API agreement](docs/api-contract.md), schemas and
+[versioned fixtures](tests/fixtures/v1/README.md) are ready for component review.
+The [decision record](docs/decisions/0002-message-contract-v1.md) tracks pending
+owner questions and the review required before freezing the first slice.
 
 ## Project references
 

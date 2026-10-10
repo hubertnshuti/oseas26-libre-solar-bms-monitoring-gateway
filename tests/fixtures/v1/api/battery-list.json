@@ -1,0 +1,22 @@
+{
+  "data": [
+    {
+      "id": 1,
+      "node_id": "53494D0000000001",
+      "source": "simulator",
+      "label": "Demo battery",
+      "soc": 74.2,
+      "soh": null,
+      "cycle_count": null,
+      "source_status": "fresh",
+      "integration_status": "recent",
+      "observed_at": "2026-10-08T14:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 25,
+    "total": 1,
+    "last_page": 1
+  }
+}
