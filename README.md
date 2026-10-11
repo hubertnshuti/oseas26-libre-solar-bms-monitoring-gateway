@@ -9,8 +9,10 @@ This repository is being developed. The setup below installs gateway tooling;
 it does not start a working simulator or a complete battery integration.
 MPM's existing demo can be run separately using the development guide.
 
-The planned components are a simulator, a versioned MQTT contract, a publisher,
-Home Assistant discovery, and an adapter delivering summaries and events to MPM.
+The versioned MQTT contract and first adapter are implemented.
+The [MQTT-to-MPM adapter guide](docs/mpm-ingest.md) explains configuration,
+delivery behavior and its current test substitutes and limitations.
+The simulator, publisher and Home Assistant discovery remain planned.
 The MPM backend and screens are developed in the companion MPM fork.
 
 ## Start development
@@ -78,8 +80,11 @@ not added by this layout change.
 
 `npm run typecheck` checks TypeScript. `npm run format:check` checks formatting
 in the gateway source and documentation. `npm test` runs the contract validation
-suite. These tests cover message shapes and semantic rules; they do not prove a
-working simulator, MQTT connection, MPM integration or restart recovery.
+and adapter suites. These tests cover message shapes, semantic rules and adapter
+delivery against local test substitutes; they do not prove a working simulator,
+real broker/MPM integration or restart recovery.
+The separate `npm run test:mpm-ingest:broker` check verifies authenticated
+Mosquitto delivery and broker reconnect against a fake MPM endpoint.
 
 The [message contract v1](docs/message-contract.md),
 [MPM API agreement](docs/api-contract.md), schemas and
@@ -90,7 +95,6 @@ owner questions and the review required before freezing the first slice.
 ## Project references
 
 - [Original challenge brief](CHALLENGE.md)
-- [Contribution guide](CONTRIBUTING.md)
 - [Code of conduct](CODE_OF_CONDUCT.md)
 - [MPM plugin development](https://micropowermanager.io/development/plugins.html)
 - [Libre Solar firmware](https://github.com/LibreSolar/bms-firmware)
