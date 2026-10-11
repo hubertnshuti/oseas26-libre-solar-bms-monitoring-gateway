@@ -117,9 +117,9 @@ Stop at a failed command and fix the reported problem. `npm ci` requires both
 `package.json` and `package-lock.json`. If either is missing, confirm that you
 cloned the shared branch containing tooling. Do not create a second package setup.
 
-This is the gateway development baseline. There is no gateway startup command
-or combined gateway/MPM Compose stack in this layout change. Runtime commands
-must be added with their implementations and verified before being documented.
+This is the gateway development baseline.
+The [adapter guide](mpm-ingest.md) documents `npm run dev:mpm-ingest` and its
+prerequisites; there is no combined gateway/MPM Compose stack yet.
 
 ## MPM development
 

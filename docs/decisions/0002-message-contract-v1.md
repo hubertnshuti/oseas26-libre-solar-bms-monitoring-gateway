@@ -1,4 +1,4 @@
-# 0001: Message contract v1
+# 0002: Message contract v1
 
 Date: 2026-10-10. Status: proposed; owner reviews pending.
 
