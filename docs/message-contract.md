@@ -182,7 +182,7 @@ recovery values and ±5 A scenarios are software demonstration values, not
 recommended settings for any physical battery. They do not implement firmware
 protection delays or establish hardware fidelity.
 
-Before freeze, review [the decision record](decisions/0001-message-contract-v1.md):
+Before freeze, review [the decision record](decisions/0002-message-contract-v1.md):
 member 2 confirms profile/channel/field/event choices, member 3 confirms API and
 PHP validation, member 4 confirms read shapes and freshness labels. Freeze only
 after recording their actual outcomes. Breaking units or meaning needs a new
