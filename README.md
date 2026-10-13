@@ -12,7 +12,10 @@ MPM's existing demo can be run separately using the development guide.
 The versioned MQTT contract and first adapter are implemented.
 The [MQTT-to-MPM adapter guide](docs/mpm-ingest.md) explains configuration,
 delivery behavior and its current test substitutes and limitations.
-The simulator, publisher and Home Assistant discovery remain planned.
+The [Libre Solar source profile](docs/simulator-source-profile.md) and
+[normalization library](docs/libresolar-normalization.md) document the pinned
+firmware mapping and locally verified B02 conversion functions. The scenario
+simulator, MQTT publisher and Home Assistant discovery remain planned.
 The MPM backend and screens are developed in the companion MPM fork.
 
 ## Start development
