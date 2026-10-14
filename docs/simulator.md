@@ -2,10 +2,11 @@
 
 The gateway simulator produces explicitly simulated readings for the
 `demo-lfp-4s-v1` four-cell, 100 Ah LFP profile. It uses the shared B02
-normalizer and publishes the v1 MQTT contract. Named B04 scenarios exercise
-faults, missing values, silent observation, connection loss and recovery. They
-are test inputs, not physical battery measurements or firmware behavior. Home
-Assistant discovery and battery controls are not implemented.
+normalizer and publishes the v1 MQTT contract. It also publishes read-only Home
+Assistant MQTT device discovery from the active profile. Named B04 scenarios
+exercise faults, missing values, silent observation, connection loss and
+recovery. They are test inputs, not physical battery measurements or firmware
+behavior. Battery controls are not implemented; see [Home Assistant setup](home-assistant.md).
 
 ## Requirements and local broker
 
@@ -210,7 +211,7 @@ npm test
 node --import tsx scripts/verify-simulator-mqtt.mjs
 ```
 
-The integration harness requires Docker and loopback access. It uses a pinned
+The B03 integration harness requires Docker and loopback access. It uses a pinned
 Eclipse Mosquitto image, starts two simulator processes, validates actual MQTT
 messages, exercises retained delivery, restart, clean stop and LWT, and passes a
 retained summary through the existing MPM adapter to a local HTTP test sink. The

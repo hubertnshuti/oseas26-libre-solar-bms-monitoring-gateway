@@ -8,6 +8,10 @@ import {
   DurableEventOutbox,
   OutboxCapacityError,
 } from "../../lib/publisher/outbox.js";
+import {
+  createHomeAssistantDiscovery,
+  HomeAssistantDiscoveryPublisher,
+} from "../../lib/publisher/discovery.js";
 import { availabilityTopic } from "../../lib/publisher/topics.js";
 import { createMeasurementGenerator } from "./generator.js";
 import { loadProfile, parseSimulatorArgs, SCENARIOS } from "./config.js";
@@ -105,6 +109,16 @@ async function main(argv: readonly string[]): Promise<void> {
     },
     now: clock,
   });
+  const discovery = new HomeAssistantDiscoveryPublisher(
+    client,
+    createHomeAssistantDiscovery(nodeId, profileCapabilities, {
+      softwareVersion: "0.1.0",
+    }),
+    (error) =>
+      process.stderr.write(
+        `${JSON.stringify({ result: "discovery_publish_failed", message: errorMessage(error) })}\n`,
+      ),
+  );
   const eventDelivery = new EventOutboxDelivery({
     nodeId,
     source: "simulator",
@@ -209,6 +223,7 @@ async function main(argv: readonly string[]): Promise<void> {
         replayEventId = undefined;
       }
       await publisher.onConnect();
+      await discovery.onConnect();
       if (stopping) return;
       await tick(true);
       if (!stopping && !cancelSchedule) {
