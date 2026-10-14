@@ -64,7 +64,8 @@ async function until(predicate, description, timeoutMs = 20000) {
 
 function recordMessage(topic, payload, packet) {
   const suffix = topic.split("/").at(-1);
-  const nodeId = topic.split("/")[3];
+  const isDiscovery = topic.startsWith("homeassistant/device/");
+  const nodeId = topic.split("/")[isDiscovery ? 2 : 3];
   const entry = {
     topic,
     nodeId,
@@ -77,6 +78,37 @@ function recordMessage(topic, payload, packet) {
   if (suffix === "availability") {
     if (!["online", "offline"].includes(entry.payloadText)) {
       violations.push(`invalid availability payload on ${topic}`);
+    }
+  } else if (isDiscovery) {
+    try {
+      entry.payload = JSON.parse(entry.payloadText);
+      const components = entry.payload.components ?? {};
+      const entityIds = Object.values(components).map(
+        (component) => component.unique_id,
+      );
+      if (
+        entry.topic !== `homeassistant/device/${nodeId}/config` ||
+        !Array.isArray(entry.payload.device?.identifiers) ||
+        !entry.payload.device.identifiers.includes(
+          `libre_solar_bms_${nodeId}`,
+        ) ||
+        !entry.payload.origin?.name ||
+        Object.keys(components).length !== 16 ||
+        new Set(entityIds).size !== entityIds.length ||
+        Object.values(components).some(
+          (component) =>
+            !["sensor", "binary_sensor"].includes(component.p) ||
+            component.command_topic !== undefined ||
+            component.expire_after !== 15,
+        ) ||
+        entry.payload.command_topic !== undefined
+      ) {
+        violations.push(
+          `invalid or writable Home Assistant discovery on ${topic}`,
+        );
+      }
+    } catch (error) {
+      violations.push(`invalid discovery JSON on ${topic}: ${error.message}`);
     }
   } else {
     try {
@@ -230,29 +262,64 @@ try {
     recordMessage(topic, payload, packet),
   );
   mqttClients.push(subscriber);
-  await subscriber.subscribeAsync("libresolar/bms/v1/+/+", { qos: 1 });
+  await subscriber.subscribeAsync(
+    ["libresolar/bms/v1/+/+", "homeassistant/device/+/config"],
+    { qos: 1 },
+  );
   const authProbe = await connectAsync(brokerUrl, {
     username: "adapter",
     password: "local-broker-test",
     reconnectPeriod: 0,
     connectTimeout: 5000,
   });
-  await authProbe.endAsync();
+  mqttClients.push(authProbe);
 
   const simA = launchSimulator(nodeA, 1001);
   const simB = launchSimulator(nodeB, 2002);
   await until(
     () =>
       [nodeA, nodeB].every((node) =>
-        ["telemetry", "summary", "attributes", "availability"].every((kind) =>
-          messages.some(
-            (message) => message.nodeId === node && message.suffix === kind,
-          ),
+        ["telemetry", "summary", "attributes", "availability", "config"].every(
+          (kind) =>
+            messages.some(
+              (message) => message.nodeId === node && message.suffix === kind,
+            ),
         ),
       ),
     "both simulated nodes publish all startup message kinds",
   );
   assert.deepEqual(violations, []);
+
+  const discoveryA = messages.find(
+    (message) => message.nodeId === nodeA && message.suffix === "config",
+  );
+  const discoveryB = messages.find(
+    (message) => message.nodeId === nodeB && message.suffix === "config",
+  );
+  assert(discoveryA && discoveryB);
+  assert.notDeepEqual(
+    discoveryA.payload.device.identifiers,
+    discoveryB.payload.device.identifiers,
+  );
+  assert.notEqual(
+    discoveryA.payload.components.state_of_charge.unique_id,
+    discoveryB.payload.components.state_of_charge.unique_id,
+  );
+  const discoveryCountBeforeBirth = messages.filter(
+    (message) => message.nodeId === nodeA && message.suffix === "config",
+  ).length;
+  await authProbe.publishAsync("homeassistant/status", "online", {
+    qos: 1,
+    retain: true,
+  });
+  await until(
+    () =>
+      messages.filter(
+        (message) => message.nodeId === nodeA && message.suffix === "config",
+      ).length > discoveryCountBeforeBirth,
+    "Home Assistant birth causes discovery republication",
+  );
+  await authProbe.endAsync();
 
   const initialTelemetry = messages.find(
     (message) => message.nodeId === nodeA && message.suffix === "telemetry",
@@ -273,6 +340,7 @@ try {
       `${prefix(nodeA)}/summary`,
       `${prefix(nodeA)}/attributes`,
       `${prefix(nodeA)}/availability`,
+      `homeassistant/device/${nodeA}/config`,
     ],
     { qos: 1 },
   );
@@ -282,13 +350,22 @@ try {
         retainedCheck.deliveries.some(
           (item) => item.topic === `${prefix(nodeA)}/${kind}`,
         ),
+      ) &&
+      retainedCheck.deliveries.some(
+        (item) => item.topic === `homeassistant/device/${nodeA}/config`,
       ),
-    "retained summary, attributes and online availability",
+    "retained summary, attributes, availability and discovery",
   );
   for (const item of retainedCheck.deliveries) {
     assert.equal(item.retain, true);
-    assert.equal(item.qos, 1);
+    if (!item.topic.endsWith("/telemetry")) assert.equal(item.qos, 1);
   }
+  const retainedDiscovery = retainedCheck.deliveries.find(
+    (item) => item.topic === `homeassistant/device/${nodeA}/config`,
+  );
+  assert(retainedDiscovery, "late subscriber receives retained discovery");
+  assert.equal(retainedDiscovery.retain, true);
+  assert.equal(retainedDiscovery.qos, 1);
   const retainedSummary = retainedCheck.deliveries.find((item) =>
     item.topic.endsWith("/summary"),
   );
@@ -484,6 +561,8 @@ try {
         "broker LWT after SIGKILL",
         "same session after broker restart",
         "two node IDs isolated by topic",
+        "retained Home Assistant device discovery is profile-sized and read-only",
+        "Home Assistant birth message triggers idempotent discovery republication",
         "retained summary accepted by actual MPM adapter with HTTP test sink",
       ],
       mpmRequests: mpmRequests.length,
