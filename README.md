@@ -6,16 +6,15 @@ and battery summaries and faults displayed inside MicroPowerManager (MPM).
 ## Development status
 
 This repository is being developed. The setup below installs gateway tooling;
-it does not start a working simulator or a complete battery integration.
-MPM's existing demo can be run separately using the development guide.
+it does not start a complete battery integration. MPM's existing demo can be
+run separately using the development guide.
 
 The versioned MQTT contract and first adapter are implemented.
 The [MQTT-to-MPM adapter guide](docs/mpm-ingest.md) explains configuration,
 delivery behavior and its current test substitutes and limitations.
 The [Libre Solar source profile](docs/simulator-source-profile.md) and
 [normalization library](docs/libresolar-normalization.md) document the pinned
-firmware mapping and locally verified B02 conversion functions. The scenario
-simulator, MQTT publisher and Home Assistant discovery remain planned.
+firmware mapping and locally verified B02 conversion functions. The normal simulator and reusable MQTT publisher are implemented; see the [simulator guide](docs/simulator.md) and [broker verification evidence](docs/evidence/simulator-mqtt.md). Home Assistant discovery remains planned.
 The MPM backend and screens are developed in the companion MPM fork.
 
 ## Start development
@@ -51,7 +50,7 @@ For MPM backend or frontend work, follow [MPM setup](docs/development.md#mpm-dev
 | `app/mpm-ingest/`    | MQTT-to-MPM delivery service                                |
 | `lib/contract/`      | Versioned JSON schemas, shared types, and field definitions |
 | `lib/libresolar/`    | Libre Solar field, unit, channel, and fault conversion      |
-| `lib/publisher/`     | MQTT publishing and Home Assistant discovery                |
+| `lib/publisher/`     | Contract MQTT publishing                                    |
 | `tests/unit/`        | Isolated component behavior                                 |
 | `tests/contract/`    | Valid and invalid message validation                        |
 | `tests/fixtures/`    | Shared, versioned test examples                             |
@@ -82,10 +81,9 @@ not added by this layout change.
 ## Checks
 
 `npm run typecheck` checks TypeScript. `npm run format:check` checks formatting
-in the gateway source and documentation. `npm test` runs the contract validation
-and adapter suites. These tests cover message shapes, semantic rules and adapter
-delivery against local test substitutes; they do not prove a working simulator,
-real broker/MPM integration or restart recovery.
+in the gateway source and documentation. `npm test` runs unit and contract
+validation suites. For actual simulator-to-Mosquitto verification, see the
+[reproducible broker evidence](docs/evidence/simulator-mqtt.md).
 The separate `npm run test:mpm-ingest:broker` check verifies authenticated
 Mosquitto delivery and broker reconnect against a fake MPM endpoint.
 
