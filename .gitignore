@@ -12,3 +12,4 @@ coverage/
 Thumbs.db
 
 *:Zone.Identifier
+.bms-runtime/

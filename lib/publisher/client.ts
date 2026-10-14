@@ -1,5 +1,6 @@
 import type {
   Attributes,
+  FaultEvent,
   ProfileCapabilities,
   ProducerEnvelope,
   Source,
@@ -53,6 +54,15 @@ export interface Observation {
 export interface PublishResult {
   telemetry: Telemetry;
   summary?: Summary;
+}
+
+export interface FaultEventTransition {
+  kind: FaultEvent["kind"];
+  previousErrorFlags: number | null;
+  currentErrorFlags: number | null;
+  faults: string[] | null;
+  addedFaults: string[];
+  clearedFaults: string[];
 }
 
 export class MqttPublisher {
@@ -146,6 +156,47 @@ export class MqttPublisher {
     }
   }
 
+  createFaultEvent(
+    telemetry: Telemetry,
+    transition: FaultEventTransition,
+  ): FaultEvent {
+    if (telemetry.node_id !== this.config.nodeId)
+      throw new Error("Telemetry node ID does not match publisher node ID");
+    const envelope = this.session.next("events", telemetry.observed_at);
+    const event: FaultEvent = {
+      ...envelope,
+      event_id: envelope.message_id,
+      telemetry_message_id: telemetry.message_id,
+      kind: transition.kind,
+      previous_error_flags: transition.previousErrorFlags,
+      current_error_flags: transition.currentErrorFlags,
+      faults: transition.faults,
+      added_faults: transition.addedFaults,
+      cleared_faults: transition.clearedFaults,
+    };
+    this.assertValid(
+      "event",
+      event,
+      producerTopic(this.config.nodeId, "events"),
+    );
+    return event;
+  }
+
+  async publishFaultEvent(event: FaultEvent): Promise<void> {
+    if (event.node_id !== this.config.nodeId)
+      throw new Error("Event node ID does not match publisher node ID");
+    this.assertValid(
+      "event",
+      event,
+      producerTopic(this.config.nodeId, "events"),
+    );
+    await this.publishRaw(
+      producerTopic(this.config.nodeId, "events"),
+      JSON.stringify(event),
+      { qos: 1, retain: false },
+    );
+  }
+
   private async publishAttributes(): Promise<void> {
     const at = this.now().toISOString();
     const attributes: Attributes = {
@@ -191,7 +242,7 @@ export class MqttPublisher {
   }
 
   private assertValid(
-    kind: "telemetry" | "summary" | "attributes",
+    kind: "telemetry" | "summary" | "attributes" | "event",
     payload: unknown,
     topic: string,
   ): void {

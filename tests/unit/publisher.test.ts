@@ -265,4 +265,38 @@ describe("version 1 MQTT publisher", () => {
     expect(first.sessionId).toBe(sessionId);
     expect(second.sessionId).not.toBe(first.sessionId);
   });
+
+  it("builds contract-valid events with the shared sequence and QoS 1 non-retained", async () => {
+    const context = setup();
+    await context.publisher.onConnect();
+    const normal = await context.publisher.publishObservation(
+      context.observation(new Date("2026-10-13T12:00:00.000Z")),
+    );
+    const fault = await context.publisher.publishObservation(
+      context.observation(new Date("2026-10-13T12:00:01.000Z")),
+    );
+    const event = context.publisher.createFaultEvent(fault.telemetry, {
+      kind: "fault_changed",
+      previousErrorFlags: 0,
+      currentErrorFlags: 2,
+      faults: ["cell_overvoltage"],
+      addedFaults: ["cell_overvoltage"],
+      clearedFaults: [],
+    });
+    expect(event.sequence).toBeGreaterThan(fault.telemetry.sequence);
+    expect(event.telemetry_message_id).toBe(fault.telemetry.message_id);
+    expect(
+      validateMessage("event", event, {
+        topic: `libresolar/bms/v1/${rawProfile.node_id}/events`,
+        profile: capabilities,
+      }).valid,
+    ).toBe(true);
+    await context.publisher.publishFaultEvent(event);
+    expect(context.mqtt.messages.at(-1)).toMatchObject({
+      topic: `libresolar/bms/v1/${rawProfile.node_id}/events`,
+      options: { qos: 1, retain: false },
+    });
+    expect(JSON.parse(context.mqtt.messages.at(-1)!.payload)).toEqual(event);
+    expect(normal.telemetry.sequence).toBeLessThan(fault.telemetry.sequence);
+  });
 });

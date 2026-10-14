@@ -15,6 +15,9 @@ delivery behavior and its current test substitutes and limitations.
 The [Libre Solar source profile](docs/simulator-source-profile.md) and
 [normalization library](docs/libresolar-normalization.md) document the pinned
 firmware mapping and locally verified B02 conversion functions. The normal simulator and reusable MQTT publisher are implemented; see the [simulator guide](docs/simulator.md) and [broker verification evidence](docs/evidence/simulator-mqtt.md). Home Assistant discovery remains planned.
+The simulator guide now also covers B04 observation-based events and its
+producer-owned durable outbox. Receipt delivery has been verified against a
+faithful test adapter; the current gateway adapter does not yet publish receipts.
 The MPM backend and screens are developed in the companion MPM fork.
 
 ## Start development
