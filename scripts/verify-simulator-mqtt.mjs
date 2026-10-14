@@ -139,6 +139,8 @@ function launchSimulator(nodeId, seed) {
       String(seed),
       "--node-id",
       nodeId,
+      "--outbox-path",
+      join(directory, `${nodeId}.events.json`),
       "--broker-url",
       brokerUrl,
     ],

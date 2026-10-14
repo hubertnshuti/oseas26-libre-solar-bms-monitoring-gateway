@@ -5,6 +5,14 @@ export const SCENARIOS = [
   "normal-cycle",
   "normal-charge",
   "normal-discharge",
+  "cell-overvoltage",
+  "cell-undervoltage",
+  "over-temperature",
+  "increasing-cell-imbalance",
+  "missing-reading",
+  "connected-but-silent",
+  "disconnect-reconnect",
+  "recovery",
 ] as const;
 export type Scenario = (typeof SCENARIOS)[number];
 
@@ -16,6 +24,11 @@ export interface SimulatorConfig {
   brokerUrl: string;
   mqttUsername?: string;
   mqttPassword?: string;
+  outboxPath: string;
+  outboxCapacity: number;
+  consumerId: string;
+  gapMs: number;
+  replayEvent?: string;
 }
 
 export interface DemoBatteryProfile {
@@ -32,7 +45,15 @@ export interface DemoBatteryProfile {
   unsupported_fields: string[];
   firmware_reference: string;
   simulation_time_factor: number;
-  scenario_limits: {
+  scenario_limits: Record<string, number> & {
+    cell_overvoltage_v: number;
+    cell_overvoltage_reset_v: number;
+    cell_undervoltage_v: number;
+    cell_undervoltage_reset_v: number;
+    charge_overtemperature_degc: number;
+    charge_overtemperature_reset_degc: number;
+    discharge_overtemperature_degc: number;
+    discharge_overtemperature_reset_degc: number;
     charge_current_a: number;
     discharge_current_a: number;
   };
@@ -55,7 +76,18 @@ export function parseSimulatorArgs(
     }
     const name = key.slice(2);
     if (
-      !["profile", "scenario", "seed", "node-id", "broker-url"].includes(name)
+      ![
+        "profile",
+        "scenario",
+        "seed",
+        "node-id",
+        "broker-url",
+        "outbox-path",
+        "outbox-capacity",
+        "consumer-id",
+        "gap-ms",
+        "replay-event",
+      ].includes(name)
     ) {
       throw new Error(`Unknown option: ${key}`);
     }
@@ -79,6 +111,22 @@ export function parseSimulatorArgs(
     );
   }
   const brokerUrl = options["broker-url"] ?? "mqtt://127.0.0.1:1883";
+  const outboxCapacity = parseBoundedInteger(
+    options["outbox-capacity"] ?? "256",
+    "--outbox-capacity",
+    1,
+    10000,
+  );
+  const gapMs = parseBoundedInteger(
+    options["gap-ms"] ?? "15000",
+    "--gap-ms",
+    1000,
+    3600000,
+  );
+  const consumerId = options["consumer-id"] ?? "mpm-demo";
+  if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(consumerId)) {
+    throw new Error("Invalid --consumer-id");
+  }
   let parsedBroker: URL;
   try {
     parsedBroker = new URL(brokerUrl);
@@ -103,9 +151,32 @@ export function parseSimulatorArgs(
     seed: Number(seedText),
     ...(nodeId ? { nodeId } : {}),
     brokerUrl,
+    outboxPath: resolve(
+      options["outbox-path"] ??
+        `.bms-runtime/${nodeId ?? "profile"}.events.json`,
+    ),
+    outboxCapacity,
+    consumerId,
+    gapMs,
+    ...(options["replay-event"]
+      ? { replayEvent: options["replay-event"] }
+      : {}),
     ...(env.MQTT_USERNAME ? { mqttUsername: env.MQTT_USERNAME } : {}),
     ...(env.MQTT_PASSWORD ? { mqttPassword: env.MQTT_PASSWORD } : {}),
   };
+}
+
+function parseBoundedInteger(
+  text: string,
+  name: string,
+  minimum: number,
+  maximum: number,
+): number {
+  if (!/^\d+$/.test(text)) throw new Error(`Invalid ${name}`);
+  const value = Number(text);
+  if (!Number.isSafeInteger(value) || value < minimum || value > maximum)
+    throw new Error(`Invalid ${name}; use ${minimum}..${maximum}`);
+  return value;
 }
 
 export async function loadProfile(
@@ -137,15 +208,38 @@ export async function loadProfile(
     profile.cell_count < 1 ||
     profile.cell_count > 16 ||
     profile.cell_channels?.length !== profile.cell_count ||
+    new Set(profile.cell_channels).size !== profile.cell_count ||
     !Number.isInteger(profile.temperature_sensor_count) ||
     profile.temperature_sensor_count < 0 ||
     profile.temperature_sensor_count > 3 ||
     profile.temperature_sensor_channels?.length !==
       profile.temperature_sensor_count ||
+    new Set(profile.temperature_sensor_channels).size !==
+      profile.temperature_sensor_count ||
     !Array.isArray(profile.supported_fields) ||
     !profile.scenario_limits ||
     !Number.isFinite(profile.scenario_limits.charge_current_a) ||
-    !Number.isFinite(profile.scenario_limits.discharge_current_a)
+    !Number.isFinite(profile.scenario_limits.discharge_current_a) ||
+    !Number.isFinite(profile.scenario_limits.cell_overvoltage_v) ||
+    !Number.isFinite(profile.scenario_limits.cell_overvoltage_reset_v) ||
+    !Number.isFinite(profile.scenario_limits.cell_undervoltage_v) ||
+    !Number.isFinite(profile.scenario_limits.cell_undervoltage_reset_v) ||
+    !Number.isFinite(profile.scenario_limits.charge_overtemperature_degc) ||
+    !Number.isFinite(
+      profile.scenario_limits.charge_overtemperature_reset_degc,
+    ) ||
+    !Number.isFinite(profile.scenario_limits.discharge_overtemperature_degc) ||
+    !Number.isFinite(
+      profile.scenario_limits.discharge_overtemperature_reset_degc,
+    ) ||
+    profile.scenario_limits.cell_overvoltage_reset_v >=
+      profile.scenario_limits.cell_overvoltage_v ||
+    profile.scenario_limits.cell_undervoltage_reset_v <=
+      profile.scenario_limits.cell_undervoltage_v ||
+    profile.scenario_limits.charge_overtemperature_reset_degc >=
+      profile.scenario_limits.charge_overtemperature_degc ||
+    profile.scenario_limits.discharge_overtemperature_reset_degc >=
+      profile.scenario_limits.discharge_overtemperature_degc
   ) {
     throw new Error(`Invalid simulator profile: ${profileName}`);
   }

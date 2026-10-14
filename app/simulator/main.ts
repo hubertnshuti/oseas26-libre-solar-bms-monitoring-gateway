@@ -2,6 +2,12 @@ import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { connect } from "mqtt";
 import { MqttPublisher } from "../../lib/publisher/index.js";
+import { FaultEventDetector } from "../../lib/publisher/events.js";
+import { EventOutboxDelivery } from "../../lib/publisher/event-delivery.js";
+import {
+  DurableEventOutbox,
+  OutboxCapacityError,
+} from "../../lib/publisher/outbox.js";
 import { availabilityTopic } from "../../lib/publisher/topics.js";
 import { createMeasurementGenerator } from "./generator.js";
 import { loadProfile, parseSimulatorArgs, SCENARIOS } from "./config.js";
@@ -15,6 +21,11 @@ Usage: node --import tsx app/simulator/main.ts [options]
   --seed <uint32>              Default: 1
   --node-id <16-hex-id>        Default: profile node ID
   --broker-url <mqtt(s) URL>   Default: mqtt://127.0.0.1:1883
+  --outbox-path <file>         Default: .bms-runtime/<node-id>.events.json
+  --outbox-capacity <count>    Default: 256
+  --consumer-id <id>           Default: mpm-demo
+  --gap-ms <milliseconds>      Default: 15000
+  --replay-event <event-id>    Republish an unchanged pending event for diagnostics
 `;
 
 async function main(argv: readonly string[]): Promise<void> {
@@ -30,10 +41,30 @@ async function main(argv: readonly string[]): Promise<void> {
   const loadedProfile = await loadProfile(config.profile);
   const nodeId = config.nodeId ?? loadedProfile.node_id;
   const profile = { ...loadedProfile, node_id: nodeId };
+  const profileCapabilities = {
+    source: "simulator" as const,
+    cell_count: profile.cell_count,
+    cell_channels: profile.cell_channels,
+    temperature_sensor_count: profile.temperature_sensor_count,
+    temperature_sensor_channels: profile.temperature_sensor_channels,
+    supported_fields: profile.supported_fields,
+  };
+  const outboxPath = config.outboxPath.replace(
+    `${config.nodeId ?? "profile"}.events.json`,
+    `${nodeId}.events.json`,
+  );
+  const outbox = await DurableEventOutbox.open({
+    path: outboxPath,
+    nodeId,
+    capacity: config.outboxCapacity,
+    profile: profileCapabilities,
+  });
+  const eventDetector = new FaultEventDetector(config.gapMs);
   const generator = createMeasurementGenerator({
     profile,
     scenario: config.scenario,
     seed: config.seed,
+    gapMs: config.gapMs,
   });
   const clock = () => new Date();
   const client = connect(config.brokerUrl, {
@@ -55,14 +86,7 @@ async function main(argv: readonly string[]): Promise<void> {
     nodeId,
     source: "simulator",
     clockSource: "simulator_host",
-    profile: {
-      source: "simulator",
-      cell_count: profile.cell_count,
-      cell_channels: profile.cell_channels,
-      temperature_sensor_count: profile.temperature_sensor_count,
-      temperature_sensor_channels: profile.temperature_sensor_channels,
-      supported_fields: profile.supported_fields,
-    },
+    profile: profileCapabilities,
     attributes: {
       manufacturer: "Simulator",
       device_type: "Libre Solar BMS demo",
@@ -81,18 +105,56 @@ async function main(argv: readonly string[]): Promise<void> {
     },
     now: clock,
   });
+  const eventDelivery = new EventOutboxDelivery({
+    nodeId,
+    source: "simulator",
+    consumerId: config.consumerId,
+    outbox,
+    transport: {
+      get connected() {
+        return client.connected;
+      },
+      subscribe(topic, options) {
+        return client.subscribeAsync(topic, options);
+      },
+      publish(event) {
+        return publisher.publishFaultEvent(event);
+      },
+    },
+    onDiagnostic(code, details) {
+      process.stderr.write(`${JSON.stringify({ result: code, ...details })}\n`);
+    },
+  });
 
   let cancelSchedule: (() => void) | undefined;
   let connectionWork = false;
   let everConnected = false;
   let stopping = false;
   let tickWork = false;
+  let disconnectTriggered = false;
+  let replayEventId = config.replayEvent;
 
   async function tick(forceSummary: boolean): Promise<void> {
     if (tickWork || stopping || !client.connected) return;
     tickWork = true;
     try {
-      const observation = generator.next(clock());
+      const now = clock();
+      if (
+        !disconnectTriggered &&
+        generator.shouldDisconnect(now) &&
+        client.stream
+      ) {
+        disconnectTriggered = true;
+        client.stream.destroy();
+        return;
+      }
+      if (!generator.shouldObserve(now)) {
+        process.stdout.write(
+          `${JSON.stringify({ result: "scenario_silent", node_id: nodeId })}\n`,
+        );
+        return;
+      }
+      const observation = generator.next(now);
       const result = await publisher.publishObservation(
         {
           nodeId,
@@ -109,6 +171,23 @@ async function main(argv: readonly string[]): Promise<void> {
           summary: Boolean(result.summary),
         })}\n`,
       );
+      const transition = eventDetector.observe(result.telemetry);
+      if (transition) {
+        const event = publisher.createFaultEvent(result.telemetry, transition);
+        try {
+          await eventDelivery.persistAndPublish(event);
+        } catch (error) {
+          const code =
+            error instanceof OutboxCapacityError
+              ? "outbox_capacity_exceeded"
+              : "outbox_degraded";
+          process.stderr.write(
+            `${JSON.stringify({ result: code, event_id: event.event_id, message: errorMessage(error) })}\n`,
+          );
+          process.exitCode = 1;
+          setTimeout(() => void stop(), 0);
+        }
+      }
     } catch (error) {
       process.stderr.write(
         `${JSON.stringify({ result: "publish_failed", message: errorMessage(error) })}\n`,
@@ -124,6 +203,11 @@ async function main(argv: readonly string[]): Promise<void> {
     const reconnect = everConnected;
     everConnected = true;
     void (async () => {
+      await eventDelivery.onConnect({ retryPending: !replayEventId });
+      if (replayEventId) {
+        await eventDelivery.replay(replayEventId);
+        replayEventId = undefined;
+      }
       await publisher.onConnect();
       if (stopping) return;
       await tick(true);
@@ -150,8 +234,13 @@ async function main(argv: readonly string[]): Promise<void> {
       });
   });
   client.on("close", () => {
+    eventDelivery.onDisconnect();
     cancelSchedule?.();
     cancelSchedule = undefined;
+  });
+  client.on("message", (topic, payload) => {
+    if (stopping) return;
+    void eventDelivery.handleReceipt(topic, payload);
   });
   client.on("error", (error) => {
     process.stderr.write(
@@ -164,6 +253,7 @@ async function main(argv: readonly string[]): Promise<void> {
     stopping = true;
     cancelSchedule?.();
     cancelSchedule = undefined;
+    eventDelivery.close();
     while (connectionWork || tickWork)
       await new Promise((resolve) => setTimeout(resolve, 5));
     try {

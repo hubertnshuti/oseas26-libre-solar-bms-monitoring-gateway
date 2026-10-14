@@ -1,0 +1,38 @@
+{
+  "broker": "Eclipse Mosquitto 2.1.2",
+  "event_topic": "libresolar/bms/v1/53494D0000000001/events",
+  "event_qos": 1,
+  "event_retain": false,
+  "event": {
+    "schema_version": 1,
+    "node_id": "53494D0000000001",
+    "source": "simulator",
+    "session_id": "0eae1207-a19b-4a7e-ab62-a91341f79206",
+    "sequence": 6,
+    "message_id": "53494D0000000001:0eae1207-a19b-4a7e-ab62-a91341f79206:events:6",
+    "observed_at": "2026-10-14T14:41:48.192Z",
+    "published_at": "2026-10-14T14:41:48.199Z",
+    "clock_source": "simulator_host",
+    "event_id": "53494D0000000001:0eae1207-a19b-4a7e-ab62-a91341f79206:events:6",
+    "telemetry_message_id": "53494D0000000001:0eae1207-a19b-4a7e-ab62-a91341f79206:telemetry:4",
+    "kind": "fault_changed",
+    "previous_error_flags": 0,
+    "current_error_flags": 2,
+    "faults": ["cell_overvoltage"],
+    "added_faults": ["cell_overvoltage"],
+    "cleared_faults": []
+  },
+  "receipt_topic": "libresolar/bms/v1/53494D0000000001/receipts/mpm",
+  "receipt_qos": 1,
+  "receipt_retain": false,
+  "receipt": {
+    "schema_version": 1,
+    "node_id": "53494D0000000001",
+    "source": "simulator",
+    "event_id": "53494D0000000001:0eae1207-a19b-4a7e-ab62-a91341f79206:events:6",
+    "consumer_id": "mpm-demo",
+    "message_id": "53494D0000000001:0eae1207-a19b-4a7e-ab62-a91341f79206:events:6:receipt:mpm-demo",
+    "status": "stored"
+  },
+  "receiver": "faithful durable MQTT test double, not the actual A04 adapter"
+}

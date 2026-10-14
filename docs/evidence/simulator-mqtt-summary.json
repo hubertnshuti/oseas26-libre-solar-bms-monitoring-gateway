@@ -8,11 +8,11 @@
     "schema_version": 1,
     "node_id": "53494D0000000001",
     "source": "simulator",
-    "session_id": "1cd62f1d-b12e-4adf-a204-9a1ed9580b44",
+    "session_id": "a9f7b437-e1a1-4921-92ec-17f22a2e7cd9",
     "sequence": 2,
-    "message_id": "53494D0000000001:1cd62f1d-b12e-4adf-a204-9a1ed9580b44:summary:2",
-    "observed_at": "2026-10-13T22:10:14.824Z",
-    "published_at": "2026-10-13T22:10:14.827Z",
+    "message_id": "53494D0000000001:a9f7b437-e1a1-4921-92ec-17f22a2e7cd9:summary:2",
+    "observed_at": "2026-10-14T14:41:10.033Z",
+    "published_at": "2026-10-14T14:41:10.036Z",
     "clock_source": "simulator_host",
     "soc": 70,
     "soh": null,
@@ -28,7 +28,7 @@
       "soh": "unsupported",
       "cycle_count": "unsupported"
     },
-    "telemetry_message_id": "53494D0000000001:1cd62f1d-b12e-4adf-a204-9a1ed9580b44:telemetry:1",
-    "last_source_observed_at": "2026-10-13T22:10:14.824Z"
+    "telemetry_message_id": "53494D0000000001:a9f7b437-e1a1-4921-92ec-17f22a2e7cd9:telemetry:1",
+    "last_source_observed_at": "2026-10-14T14:41:10.033Z"
   }
 }
