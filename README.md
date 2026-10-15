@@ -20,6 +20,10 @@ producer-owned durable outbox. Receipt delivery has been verified against a
 faithful test adapter; the current gateway adapter does not yet publish receipts.
 The MPM backend and screens are developed in the companion MPM fork.
 
+For current run paths, source availability and an operator walkthrough, see the
+[quickstart](docs/quickstart.md), [troubleshooting](docs/troubleshooting.md) and
+[reproduction record](docs/evidence/reproduction.md).
+
 ## Start development
 
 Prerequisites: Git, Python 3, Node through nvm, and Docker with Compose.

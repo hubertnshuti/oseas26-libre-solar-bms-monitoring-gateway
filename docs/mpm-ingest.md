@@ -13,8 +13,9 @@ Use Node from `.nvmrc` and run these commands from the gateway root.
 Prerequisites for runtime: an authenticated MQTT broker reachable from this machine,
 its username/password, an MPM backend with the Libre Solar plugin enabled, a company
 API key, and batteries provisioned for the allowed node IDs.
-The companion MPM team revision checked for this task has no Libre Solar plugin yet;
-coordinate these backend values and provisioning with its owner before real delivery.
+The companion MPM integration branch now contains the Libre Solar backend/plugin at `677e189f`.
+Follow its published plugin and isolated Docker guides for explicit-company provisioning.
+The [quickstart](quickstart.md) records frontend publication and remaining full-stack limitations.
 
 ```bash
 nvm use
