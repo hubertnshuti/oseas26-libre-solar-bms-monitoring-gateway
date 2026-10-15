@@ -5,14 +5,14 @@ The implementation and its automated checks are delivered; the record below dist
 
 ## Sources
 
-| Source              | Revision and result                                                                                |
-| ------------------- | -------------------------------------------------------------------------------------------------- |
-| Clean Gateway clone | `027188253f7496f11c1b74e1b0112db9124b7feb`, published `team/bms-monitoring`.                       |
-| Layout proposal     | `6e22d5a`, now included through Gateway PR #12 at the clean-clone revision.                        |
-| MPM backend         | `677e189f`, published integration baseline with plugin, ingestion, events/status and provisioning. |
-| MPM frontend        | `2958b324`, committed on `feat/battery-view-layout`; team-fork push denied to Lucide-Pascale.      |
+| Source              | Revision and result                                                                                                 |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Clean Gateway clone | `027188253f7496f11c1b74e1b0112db9124b7feb`, published `team/bms-monitoring`.                                        |
+| Layout proposal     | `6e22d5a`, now included through Gateway PR #12 at the clean-clone revision.                                         |
+| MPM backend         | `677e189f`, published integration baseline with plugin, ingestion, events/status and provisioning.                  |
+| MPM frontend        | `2958b324`, published on `feat/battery-view-layout` after Lucide accepted the MPM invitation; review/merge pending. |
 
-The frontend branch must be published before an outside reviewer can obtain the complete view.
+The frontend branch is now available to outside reviewers; its publication followed the initial reproduction preflight.
 No upstream merge, stakeholder approval or passing CI is inferred from these local results.
 
 ## Environment and isolation
@@ -92,21 +92,22 @@ The destination was unused when executed; choose another unused destination when
 Observed: clone succeeded at `027188253f7496f11c1b74e1b0112db9124b7feb`, clean status, no submodule output and no tracked `.gitmodules`.
 The only tracked packaging entries were `external/README.md`, `deploy/README.md` and `deploy/mpm-ingest.env.example`.
 There was no pinned MPM source or combined deployment to continue from.
-The new frontend revision was also unavailable from the team remote because its push was denied.
+At the time of this preflight the frontend revision was unavailable because its push was denied.
+That publication issue was subsequently resolved by accepting the MPM invitation and pushing the existing commit; the packaging gaps remain.
 The attempt therefore stopped before database initialization.
 No clean full-stack installation, fresh data volume or independent end-to-end demonstration is claimed.
 
 ## Remaining acceptance and ownership
 
-| Requirement                                           | Current result                                                   | Exact next action                                                                                  |
-| ----------------------------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Obtain frontend from published source                 | Blocked by MPM write permission.                                 | Publish `2958b324`, then create the internal MPM PR.                                               |
-| Fresh clone selects compatible MPM                    | No submodule/pin.                                                | Integration maintainer pins the published compatible MPM commit.                                   |
-| One documented full-stack startup                     | Component guides only.                                           | Integration maintainer publishes combined Docker packaging, then rerun from fresh isolated data.   |
-| Real source silence/disconnect/adapter-stop freshness | UI logic tested; adapter status delivery absent.                 | Implement real status delivery and run the documented simulator scenarios.                         |
-| Durable lost-response retry and event receipts        | Adapter queue/retry/receipts absent.                             | Implement and verify those integration behaviors; retain producer pending events meanwhile.        |
-| Browser screens/usability                             | Manual VS Code browser path available; screenshots not captured. | Capture normal/fault/unknown/stale/error and record keyboard/zoom/narrow-screen results.           |
-| Independent clean demonstration                       | Not completed.                                                   | Follow only published instructions after packaging is ready; keep the working installation intact. |
+| Requirement                                           | Current result                                                   | Exact next action                                                                                          |
+| ----------------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Obtain frontend from published source                 | Resolved: task branch published.                                 | Create and review the internal PR for published `2958b324`, then record the reviewed integration revision. |
+| Fresh clone selects compatible MPM                    | No submodule/pin.                                                | Integration maintainer pins the published compatible MPM commit.                                           |
+| One documented full-stack startup                     | Component guides only.                                           | Integration maintainer publishes combined Docker packaging, then rerun from fresh isolated data.           |
+| Real source silence/disconnect/adapter-stop freshness | UI logic tested; adapter status delivery absent.                 | Implement real status delivery and run the documented simulator scenarios.                                 |
+| Durable lost-response retry and event receipts        | Adapter queue/retry/receipts absent.                             | Implement and verify those integration behaviors; retain producer pending events meanwhile.                |
+| Browser screens/usability                             | Manual VS Code browser path available; screenshots not captured. | Capture normal/fault/unknown/stale/error and record keyboard/zoom/narrow-screen results.                   |
+| Independent clean demonstration                       | Not completed.                                                   | Follow only published instructions after packaging is ready; keep the working installation intact.         |
 
 Use the [quickstart](../quickstart.md) and [troubleshooting guide](../troubleshooting.md) for the current run paths and failure diagnostics.
 The simulated path is not evidence of physical hardware validation or production readiness.

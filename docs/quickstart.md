@@ -6,13 +6,13 @@ The demonstrated source is a simulator, not validated battery hardware.
 
 ## Available sources and current limits
 
-| Component                           | Revision inspected                         | Availability                                                                       |
-| ----------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------- |
-| Gateway, simulator and HA discovery | `027188253f7496f11c1b74e1b0112db9124b7feb` | Published on the team integration branch.                                          |
-| MPM backend/plugin                  | `677e189f`                                 | Published on the companion integration branch.                                     |
-| MPM battery screens                 | `2958b324` on `feat/battery-view-layout`   | Committed locally; push denied for Lucide-Pascale when checked on 15 October 2026. |
+| Component                           | Revision inspected                         | Availability                                                           |
+| ----------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------- |
+| Gateway, simulator and HA discovery | `027188253f7496f11c1b74e1b0112db9124b7feb` | Published on the team integration branch.                              |
+| MPM backend/plugin                  | `677e189f`                                 | Published on the companion integration branch.                         |
+| MPM battery screens                 | `2958b324` on `feat/battery-view-layout`   | Published on the team fork task branch; internal review/merge pending. |
 
-The screen revision must be published before a new contributor can fetch it.
+The screen revision is now published on `feat/battery-view-layout`; use that branch to obtain the view until it is reviewed and merged.
 The gateway currently has no pinned MPM submodule or combined Docker deployment.
 A recursive clean clone therefore cannot yet reproduce the whole demonstration.
 The [reproduction record](evidence/reproduction.md) separates verified results from these remaining delivery steps.
