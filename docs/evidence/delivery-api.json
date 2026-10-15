@@ -1,0 +1,105 @@
+{
+  "captured_at": "2026-10-15T21:26:33Z",
+  "source": "real simulator \u2192 MQTT \u2192 adapter \u2192 initialized MPM backend",
+  "mpm_commit": "9b102f2526167d18fb2e03f4aad297351a4eeef2",
+  "node_id": "53494D0000000001",
+  "summary": {
+    "soc": 70.00280977788078,
+    "soh": null,
+    "faults": ["cell_overvoltage"],
+    "source": "simulator",
+    "node_id": "53494D0000000001",
+    "quality": {
+      "soh": "unsupported",
+      "cycle_count": "unsupported"
+    },
+    "sequence": 5,
+    "bms_state": "NORMAL",
+    "message_id": "53494D0000000001:e6c2a3c5-f791-4e20-88ec-18241caa90d3:summary:5",
+    "session_id": "e6c2a3c5-f791-4e20-88ec-18241caa90d3",
+    "cycle_count": null,
+    "error_flags": 2,
+    "observed_at": "2026-10-15T21:26:30.771Z",
+    "clock_source": "simulator_host",
+    "published_at": "2026-10-15T21:26:30.772Z",
+    "bms_state_code": 3,
+    "schema_version": 1,
+    "cell_voltage_delta": 0.402047,
+    "cell_temperature_max": 27.61,
+    "telemetry_message_id": "53494D0000000001:e6c2a3c5-f791-4e20-88ec-18241caa90d3:telemetry:4",
+    "last_source_observed_at": "2026-10-15T21:26:30.771Z",
+    "component_temperature_max": 35.01
+  },
+  "integration_status": "stale",
+  "events": [
+    {
+      "id": 10,
+      "event": {
+        "kind": "fault_changed",
+        "faults": ["cell_overvoltage"],
+        "source": "simulator",
+        "node_id": "53494D0000000001",
+        "event_id": "53494D0000000001:e6c2a3c5-f791-4e20-88ec-18241caa90d3:events:6",
+        "sequence": 6,
+        "message_id": "53494D0000000001:e6c2a3c5-f791-4e20-88ec-18241caa90d3:events:6",
+        "session_id": "e6c2a3c5-f791-4e20-88ec-18241caa90d3",
+        "observed_at": "2026-10-15T21:26:30.771Z",
+        "added_faults": ["cell_overvoltage"],
+        "clock_source": "simulator_host",
+        "published_at": "2026-10-15T21:26:30.773Z",
+        "cleared_faults": [],
+        "schema_version": 1,
+        "current_error_flags": 2,
+        "previous_error_flags": 0,
+        "telemetry_message_id": "53494D0000000001:e6c2a3c5-f791-4e20-88ec-18241caa90d3:telemetry:4"
+      },
+      "received_at": "2026-10-15T21:26:33.150000Z"
+    },
+    {
+      "id": 9,
+      "event": {
+        "kind": "fault_changed",
+        "faults": [],
+        "source": "simulator",
+        "node_id": "53494D0000000001",
+        "event_id": "53494D0000000001:82f08a78-1844-4d27-90b5-09725786f250:events:14",
+        "sequence": 14,
+        "message_id": "53494D0000000001:82f08a78-1844-4d27-90b5-09725786f250:events:14",
+        "session_id": "82f08a78-1844-4d27-90b5-09725786f250",
+        "observed_at": "2026-10-15T21:24:47.343Z",
+        "added_faults": [],
+        "clock_source": "simulator_host",
+        "published_at": "2026-10-15T21:24:47.402Z",
+        "cleared_faults": ["cell_overvoltage"],
+        "schema_version": 1,
+        "current_error_flags": 0,
+        "previous_error_flags": 2,
+        "telemetry_message_id": "53494D0000000001:82f08a78-1844-4d27-90b5-09725786f250:telemetry:12"
+      },
+      "received_at": "2026-10-15T21:24:47.841000Z"
+    },
+    {
+      "id": 8,
+      "event": {
+        "kind": "fault_changed",
+        "faults": ["cell_overvoltage"],
+        "source": "simulator",
+        "node_id": "53494D0000000001",
+        "event_id": "53494D0000000001:82f08a78-1844-4d27-90b5-09725786f250:events:6",
+        "sequence": 6,
+        "message_id": "53494D0000000001:82f08a78-1844-4d27-90b5-09725786f250:events:6",
+        "session_id": "82f08a78-1844-4d27-90b5-09725786f250",
+        "observed_at": "2026-10-15T21:24:41.339Z",
+        "added_faults": ["cell_overvoltage"],
+        "clock_source": "simulator_host",
+        "published_at": "2026-10-15T21:24:41.342Z",
+        "cleared_faults": [],
+        "schema_version": 1,
+        "current_error_flags": 2,
+        "previous_error_flags": 0,
+        "telemetry_message_id": "53494D0000000001:82f08a78-1844-4d27-90b5-09725786f250:telemetry:4"
+      },
+      "received_at": "2026-10-15T21:24:41.998000Z"
+    }
+  ]
+}

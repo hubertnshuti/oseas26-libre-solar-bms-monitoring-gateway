@@ -1,0 +1,250 @@
+name: ${COMPOSE_PROJECT_NAME:-libresolar-demo}
+
+x-backend: &backend
+  image: ${MPM_BACKEND_IMAGE:-libresolar-demo-backend:local}
+  build:
+    context: ./external/micropowermanager
+    dockerfile: docker/DockerfileBackendDev
+  working_dir: /var/www/html
+  entrypoint: []
+  stop_signal: SIGTERM
+  environment: &backend-environment
+    APP_ENV: development
+    APP_DEBUG: "false"
+    APP_KEY: ${APP_KEY:?Run bash deploy/demo.sh configure first}
+    JWT_SECRET: ${JWT_SECRET:?Run bash deploy/demo.sh configure first}
+    APP_URL: http://localhost:${MPM_BACKEND_PORT:-18080}
+    MPM_FRONTEND_URL: http://localhost:${MPM_FRONTEND_PORT:-18081}
+    MPM_LOAD_DEMO_DATA: "false"
+    MPM_FORCE_OPTIMIZE: "false"
+    TELESCOPE_ENABLED: "false"
+    DB_CONNECTION: micro_power_manager
+    DB_HOST: mysql
+    DB_PORT: 3306
+    DB_DATABASE: micro_power_manager
+    DB_USERNAME: root
+    DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Run bash deploy/demo.sh configure first}
+    REDIS_HOST: redis
+    REDIS_PASSWORD: "null"
+    QUEUE_DRIVER: redis
+    CACHE_DRIVER: redis
+  volumes:
+    - ./external/micropowermanager/src/backend:/var/www/html
+    - backend_vendor:/var/www/html/vendor
+    - backend_storage:/var/www/html/storage
+    - backend_cache:/var/www/html/bootstrap/cache
+  mem_limit: 512m
+
+services:
+  backend:
+    <<: *backend
+    command: [php, artisan, serve, --host=0.0.0.0, --port=8000, --no-reload]
+    ports: ["127.0.0.1:${MPM_BACKEND_PORT:-18080}:8000"]
+    depends_on:
+      mysql: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: [CMD, curl, -fsS, http://localhost:8000/up]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  horizon:
+    <<: *backend
+    command: [php, artisan, horizon]
+    depends_on:
+      backend: { condition: service_healthy }
+    stop_grace_period: 60s
+
+  dependencies:
+    <<: *backend
+    command:
+      [
+        sh,
+        -ec,
+        "mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs; composer install --no-interaction --prefer-dist",
+      ]
+    mem_limit: 768m
+    profiles: [install]
+
+  initialize:
+    <<: *backend
+    profiles: [install]
+    volumes:
+      - ./external/micropowermanager/src/backend:/var/www/html
+      - backend_vendor:/var/www/html/vendor
+      - backend_storage:/var/www/html/storage
+      - backend_cache:/var/www/html/bootstrap/cache
+      - ./.demo:/delivery-secrets
+    command:
+      - sh
+      - -ec
+      - |
+        mkdir -p storage/app/private storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
+        php artisan migrate --force
+        php artisan db:seed --force
+        php artisan migrate-tenant --force
+        php artisan libre-solar-bms:provision 1 "$${BMS_NODE_ID}" --label="Simulated demonstration battery" --adapter="$${BMS_ADAPTER_ID}" --source=simulator --key-file=storage/app/private/gateway-demo.key
+        umask 077
+        cp storage/app/private/gateway-demo.key /delivery-secrets/adapter.key
+    environment:
+      <<: *backend-environment
+      BMS_NODE_ID: ${BMS_NODE_ID:-53494D0000000001}
+      BMS_ADAPTER_ID: ${BMS_ADAPTER_ID:-mpm-demo}
+
+  mysql:
+    image: mysql@sha256:6ea90827b1100f8f2ae306a539f86d2c264a26ed435a2a9f75551dd5c3aeb242
+    environment:
+      MYSQL_DATABASE: micro_power_manager
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Run bash deploy/demo.sh configure first}
+    volumes: [mysql_data:/var/lib/mysql]
+    healthcheck:
+      test:
+        [
+          CMD-SHELL,
+          'MYSQL_PWD="$$MYSQL_ROOT_PASSWORD" mysql --protocol=TCP -h 127.0.0.1 -u root -Nse "SELECT 1"',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+
+  redis:
+    image: redis@sha256:c6eabf748fc7a61dbb5a705c78bcf3d6377b1127a97d0ce965c11c44ba46896f
+    command: [redis-server, --appendonly, "yes"]
+    volumes: [redis_data:/data]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  frontend:
+    image: libresolar-demo-frontend:local
+    build:
+      context: ./external/micropowermanager
+      dockerfile: ../../deploy/Dockerfile.frontend
+      args:
+        MPM_BACKEND_URL: http://localhost:${MPM_BACKEND_PORT:-18080}
+    ports: ["127.0.0.1:${MPM_FRONTEND_PORT:-18081}:80"]
+    healthcheck:
+      test: [CMD, wget, -q, --spider, http://127.0.0.1/]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+    mem_limit: 128m
+
+  broker-init:
+    image: eclipse-mosquitto@sha256:38c0da4f2ef84284d47b3b3eeea1cb3bdeabe81ee10caf0cd5c5ff61ee3ea408
+    user: "0:0"
+    profiles: [install]
+    environment:
+      MQTT_USERNAME: ${MQTT_USERNAME:-bms-demo}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:?Run bash deploy/demo.sh configure first}
+    volumes: [broker_config:/configuration]
+    entrypoint: [sh, -ec]
+    command:
+      - 'mosquitto_passwd -b -c /configuration/passwords "$$MQTT_USERNAME" "$$MQTT_PASSWORD"; chown 1883:1883 /configuration/passwords; chmod 600 /configuration/passwords'
+
+  mqtt:
+    image: eclipse-mosquitto@sha256:38c0da4f2ef84284d47b3b3eeea1cb3bdeabe81ee10caf0cd5c5ff61ee3ea408
+    ports: ["127.0.0.1:${MQTT_PORT:-1886}:1883"]
+    volumes:
+      - ./deploy/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - broker_config:/mosquitto/config
+      - mqtt_data:/mosquitto/data
+    environment:
+      MQTT_USERNAME: ${MQTT_USERNAME:-bms-demo}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:?Run bash deploy/demo.sh configure first}
+    healthcheck:
+      test:
+        [
+          CMD-SHELL,
+          'mosquitto_pub -h 127.0.0.1 -u "$$MQTT_USERNAME" -P "$$MQTT_PASSWORD" -t demo/health -m ready',
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+
+  adapter:
+    image: libresolar-demo-gateway:local
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.gateway
+    entrypoint: [/usr/local/bin/adapter-entrypoint]
+    environment:
+      MQTT_URL: mqtt://mqtt:1883
+      MQTT_USERNAME: ${MQTT_USERNAME:-bms-demo}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:?Run bash deploy/demo.sh configure first}
+      MPM_BASE_URL: http://backend:8000
+      MPM_COMPANY_BINDING: demo-company
+      BMS_ADAPTER_ID: ${BMS_ADAPTER_ID:-mpm-demo}
+      BMS_NODE_IDS: ${BMS_NODE_ID:-53494D0000000001}
+    volumes:
+      - type: bind
+        source: ./.demo/adapter.key
+        target: /run/secrets/adapter.key
+        read_only: true
+        bind: { create_host_path: false }
+    depends_on:
+      mqtt: { condition: service_healthy }
+      backend: { condition: service_healthy }
+    mem_limit: 256m
+
+  simulator:
+    image: libresolar-demo-gateway:local
+    command:
+      - node
+      - --import
+      - tsx
+      - app/simulator/main.ts
+      - --broker-url
+      - mqtt://mqtt:1883
+      - --node-id
+      - ${BMS_NODE_ID:-53494D0000000001}
+      - --consumer-id
+      - ${BMS_ADAPTER_ID:-mpm-demo}
+      - --scenario
+      - ${SIMULATOR_SCENARIO:-normal-cycle}
+      - --seed
+      - "17"
+      - --outbox-path
+      - /data/events.json
+    environment:
+      MQTT_USERNAME: ${MQTT_USERNAME:-bms-demo}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:?Run bash deploy/demo.sh configure first}
+    volumes: [simulator_data:/data]
+    depends_on:
+      mqtt: { condition: service_healthy }
+      adapter: { condition: service_started }
+    mem_limit: 256m
+
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant@sha256:130241f28d01fa80dfa3b44f7d89781c188d8642ecab9024f079f19f9f82baa0
+    ports: ["127.0.0.1:${HOME_ASSISTANT_PORT:-18123}:8123"]
+    volumes: [homeassistant_data:/config]
+    environment: { TZ: UTC }
+    depends_on:
+      mqtt: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          CMD,
+          python3,
+          -c,
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8123/', timeout=5)",
+        ]
+      interval: 15s
+      timeout: 8s
+      retries: 20
+      start_period: 30s
+
+volumes:
+  backend_vendor:
+  backend_storage:
+  backend_cache:
+  mysql_data:
+  redis_data:
+  broker_config:
+  mqtt_data:
+  simulator_data:
+  homeassistant_data:

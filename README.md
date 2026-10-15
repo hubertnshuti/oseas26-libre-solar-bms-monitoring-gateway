@@ -1,107 +1,74 @@
 # Libre Solar BMS Monitoring Gateway
 
-Battery monitoring through a shared MQTT feed, with Home Assistant telemetry
-and battery summaries and faults displayed inside MicroPowerManager (MPM).
+Battery monitoring for mini-grid operators: live electrical readings in Home Assistant, with battery summaries and fault history in MicroPowerManager (MPM).
+One MQTT feed serves both applications.
+**This demonstration uses simulated readings, not a physical battery.**
 
-## Development status
-
-This repository is being developed. The setup below installs gateway tooling;
-it does not start a complete battery integration. MPM's existing demo can be
-run separately using the development guide.
-
-The versioned MQTT contract and first adapter are implemented.
-The [MQTT-to-MPM adapter guide](docs/mpm-ingest.md) explains configuration,
-delivery behavior and its current test substitutes and limitations.
-The [Libre Solar source profile](docs/simulator-source-profile.md) and
-[normalization library](docs/libresolar-normalization.md) document the pinned
-firmware mapping and locally verified B02 conversion functions. The normal simulator and reusable MQTT publisher are implemented; see the [simulator guide](docs/simulator.md), [Home Assistant setup](docs/home-assistant.md), and [broker verification evidence](docs/evidence/simulator-mqtt.md).
-The simulator guide now also covers B04 observation-based events and its
-producer-owned durable outbox. Receipt delivery has been verified against a
-faithful test adapter; the current gateway adapter does not yet publish receipts.
-The MPM backend and screens are developed in the companion MPM fork.
-
-## Start development
-
-Prerequisites: Git, Python 3, Node through nvm, and Docker with Compose.
-On Windows, use Ubuntu/WSL 2 and Docker Desktop with Ubuntu integration enabled.
-See [development setup](docs/development.md) for installation and sign-in steps.
-
-Clone once; if the folder already exists, open the existing clone.
-
-```bash
-mkdir -p ~/work/oseas
-cd ~/work/oseas
-git clone --branch team/bms-monitoring https://github.com/hubertnshuti/oseas26-libre-solar-bms-monitoring-gateway.git gateway
-cd gateway
-nvm install && nvm use && npm ci
-bash scripts/check-environment.sh
-npm run typecheck
-npm run format:check
+```text
+Simulator → MQTT broker → Home Assistant: discovery, live readings, history
+                      └→ Gateway adapter → MPM: battery summaries and fault events
 ```
 
-Run each command in order. Resolve failures before continuing.
-The environment check requires Docker Desktop to be running.
+An operator can inspect a simulated battery, identify an observed fault, and see when the measurement was taken.
+The integration is read-only: it does not control batteries, change protection settings, or affect customer payments.
+Unsupported state-of-health and cycle-count measurements remain unavailable.
 
-Create a task branch before editing. Follow the [branch, test, and PR workflow](docs/development.md#branch-test-and-pr-workflow).
-For MPM backend or frontend work, follow [MPM setup](docs/development.md#mpm-development).
+## Run the demonstration
 
-## Repository layout
+Prerequisites: Git, Docker with Compose, Bash and OpenSSL.
+Use Linux or a WSL terminal with Docker Desktop integration enabled.
+First installation downloads/builds images and initializes a private local demo database; allow time and disk space.
+No host Node, npm, PHP or Composer installation is needed to run the demo.
 
-| Directory            | Purpose                                                     |
-| -------------------- | ----------------------------------------------------------- |
-| `app/simulator/`     | Simulated battery readings and repeatable scenarios         |
-| `app/mpm-ingest/`    | MQTT-to-MPM delivery service                                |
-| `lib/contract/`      | Versioned JSON schemas, shared types, and field definitions |
-| `lib/libresolar/`    | Libre Solar field, unit, channel, and fault conversion      |
-| `lib/publisher/`     | Contract MQTT publishing                                    |
-| `tests/unit/`        | Isolated component behavior                                 |
-| `tests/contract/`    | Valid and invalid message validation                        |
-| `tests/fixtures/`    | Shared, versioned test examples                             |
-| `tests/integration/` | Behavior across services                                    |
-| `deploy/`            | Gateway deployment configuration as it is implemented       |
-| `scripts/`           | Environment and development utilities                       |
-| `docs/decisions/`    | Technical choices and their reasons                         |
-| `docs/evidence/`     | Reproduction steps and actual verification results          |
-| `external/`          | Companion source references; MPM submodule planned          |
+```bash
+git clone --branch feat/demo-compose --recurse-submodules https://github.com/hubertnshuti/oseas26-libre-solar-bms-monitoring-gateway.git gateway
+cd gateway
+bash deploy/demo.sh configure
+```
 
-Empty component directories contain `.gitkeep` so Git preserves their paths.
-Remove a directory's `.gitkeep` when adding its first implementation files.
+Review `.env` for an unused project name and ports, then follow the [first-installation guide](docs/quickstart.md).
+After installation, the ordinary startup command is:
 
-## Integration boundaries
+```bash
+docker compose up -d --wait --wait-timeout 300
+```
 
-- The simulator and future hardware sources publish the same documented contract.
-- Home Assistant receives telemetry for live readings and history.
-- The adapter sends lower-frequency summaries and fault events to MPM.
-- MPM owns authentication, company separation, battery records, and its screens.
-- Missing readings remain distinguishable from zero. Simulated data is labeled.
+| Application        | Default local URL         |
+| ------------------ | ------------------------- |
+| MicroPowerManager  | http://localhost:18081    |
+| Home Assistant     | http://localhost:18123    |
+| MPM backend health | http://localhost:18080/up |
 
-MPM source belongs in the [companion fork](https://github.com/hubertnshuti/micropowermanager).
-For current development, clone it beside the gateway. The planned integrated
-delivery will reference an exact published MPM commit through a Git submodule
-and build that code with Docker. The submodule and combined deployment are
-not added by this layout change.
+Complete Home Assistant onboarding once, using the exact MQTT settings in the setup guide.
+Saved configuration and history persist across `docker compose stop` and the startup command.
+See the [five-minute demonstration](docs/demo.md) for the normal/fault sequence and presenter notes.
 
-## Checks
+## Delivery status
 
-`npm run typecheck` checks TypeScript. `npm run format:check` checks formatting
-in the gateway source and documentation. `npm test` runs unit and contract
-validation suites. For actual simulator-to-Mosquitto verification, see the
-[reproducible broker evidence](docs/evidence/simulator-mqtt.md).
-The separate `npm run test:mpm-ingest:broker` check verifies authenticated
-Mosquitto delivery and broker reconnect against a fake MPM endpoint.
+The MPM submodule pins merged team commit `9b102f2526167d18fb2e03f4aad297351a4eeef2`, containing backend and battery screens.
+The simulator, MQTT contract, discovery publisher, adapter, backend and screens are implemented.
+The combined Compose workflow is undergoing verification; consult the [verification record](docs/evidence/delivery.md) for actual results.
+Code presence and unit tests alone do not establish a working full demonstration.
 
-The [message contract v1](docs/message-contract.md),
-[MPM API agreement](docs/api-contract.md), schemas and
-[versioned fixtures](tests/fixtures/v1/README.md) are ready for component review.
-The [decision record](docs/decisions/0002-message-contract-v1.md) tracks pending
-owner questions and the review required before freezing the first slice.
+The adapter currently forwards summaries, events and attributes.
+It does not persist pending HTTP work, issue event receipts, or deliver source-freshness heartbeats.
+MPM therefore may show stale integration even while new summaries arrive.
+The simulator retains unacknowledged events; repeated delivery is handled by MPM’s event identity checks, but complete outage recovery is not guaranteed.
+Hardware transport and Prospect integration are not demonstrated.
+This local HTTP setup is a demonstration, not a production deployment.
 
-## Project references
+## Technical references
 
-- [Original challenge brief](CHALLENGE.md)
-- [Code of conduct](CODE_OF_CONDUCT.md)
-- [MPM plugin development](https://micropowermanager.io/development/plugins.html)
-- [Libre Solar firmware](https://github.com/LibreSolar/bms-firmware)
+- [Message contract and timing](docs/message-contract.md)
+- [API authentication, tenant ownership and response shapes](docs/api-contract.md)
+- [Adapter behavior and limitations](docs/mpm-ingest.md)
+- [Simulator scenarios and field mapping](docs/simulator.md)
+- [Home Assistant entities and discovery](docs/home-assistant.md)
+- [Battery screen layout and field mapping](docs/battery-view.md)
+- [Development and checks](docs/development.md)
+- [Original challenge](CHALLENGE.md)
 
-The challenge includes a real BMS transport demonstration, with the simulator
-as fallback. See the challenge brief for the complete expected outcomes.
+Gateway application code is in `app/`, shared schemas/normalization/publishing in `lib/`, and tests in `tests/`.
+Docker packaging is in `compose.yaml` and `deploy/`.
+MPM remains a separate repository under `external/micropowermanager`, pinned by Git rather than copied into this source tree.
+Internal team merges and upstream acceptance are separate; this delivery does not claim upstream acceptance.
