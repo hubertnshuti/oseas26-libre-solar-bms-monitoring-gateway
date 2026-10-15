@@ -21,7 +21,7 @@ First installation downloads/builds images and initializes a private local demo 
 No host Node, npm, PHP or Composer installation is needed to run the demo.
 
 ```bash
-git clone --branch feat/demo-compose --recurse-submodules https://github.com/hubertnshuti/oseas26-libre-solar-bms-monitoring-gateway.git gateway
+git clone --branch team/bms-monitoring --recurse-submodules https://github.com/hubertnshuti/oseas26-libre-solar-bms-monitoring-gateway.git gateway
 cd gateway
 bash deploy/demo.sh configure
 ```
