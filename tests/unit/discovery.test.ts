@@ -76,8 +76,8 @@ describe("Home Assistant MQTT device discovery", () => {
     expect(result.payload).toMatchObject({
       device: {
         identifiers: [`libre_solar_bms_${profileNode}`],
-        name: `Libre Solar BMS ${profileNode}`,
-        manufacturer: "Libre Solar",
+        name: `Libre Solar BMS (simulated) ${profileNode}`,
+        manufacturer: "Simulator",
         model: "Battery Management System",
         serial_number: profileNode,
       },
@@ -95,6 +95,23 @@ describe("Home Assistant MQTT device discovery", () => {
         },
       ],
     });
+  });
+
+  it("distinguishes simulated and hardware devices without changing identity", () => {
+    const simulated = createHomeAssistantDiscovery(profileNode, profile);
+    const hardware = createHomeAssistantDiscovery(profileNode, {
+      ...profile,
+      source: "hardware",
+    });
+    expect(hardware.payload.device).toMatchObject({
+      name: `Libre Solar BMS ${profileNode}`,
+      manufacturer: "Libre Solar",
+      identifiers: [`libre_solar_bms_${profileNode}`],
+    });
+    expect(hardware.topic).toBe(simulated.topic);
+    expect(Object.keys(hardware.payload.components as object)).toEqual(
+      Object.keys(simulated.payload.components as object),
+    );
   });
 
   it("creates stable unique components for each configured demo measurement", () => {

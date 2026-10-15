@@ -200,8 +200,9 @@ export function createHomeAssistantDiscovery(
     payload: {
       device: {
         identifiers: [`libre_solar_bms_${nodeId}`],
-        name: `Libre Solar BMS ${nodeId}`,
-        manufacturer: "Libre Solar",
+        name: `Libre Solar BMS ${profile.source === "simulator" ? "(simulated) " : ""}${nodeId}`,
+        manufacturer:
+          profile.source === "simulator" ? "Simulator" : "Libre Solar",
         model: "Battery Management System",
         serial_number: nodeId,
       },

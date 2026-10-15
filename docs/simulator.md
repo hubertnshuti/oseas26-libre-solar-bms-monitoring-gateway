@@ -1,10 +1,8 @@
-# Libre Solar BMS simulator and demo guide
+# Libre Solar BMS simulator
 
-This guide covers the B01–B04 implementation on `team/bms-monitoring` commit
-`888557c`. Home Assistant discovery is B05; at the time of writing its code is
-on the separate local branch `feat/home-assistant-discovery` at `9dd42ae` and
-has not been merged into this base. See [Home Assistant setup](home-assistant.md)
-for that dependency and local test arrangement.
+For the prepared Docker demonstration, use the [setup guide](quickstart.md) and [scenario walkthrough](demo.md).
+This page documents the simulator and developer-level verification.
+Home Assistant discovery is merged and included in the current simulator.
 
 Every generated reading and threshold is a **simulated test input**. It is not
 from a physical battery, a validated battery model, a recommended protection
@@ -13,33 +11,31 @@ setting, or proof of firmware behavior.
 ## What the simulator does
 
 `app/simulator/` generates repeatable raw readings from the
-`demo-lfp-4s-v1` profile. The pure B02 normalizer in `lib/libresolar/` converts
-them to supported v1 values and quality reasons. The reusable B03 publisher
-validates and publishes those messages. B04 adds observation-based fault events
+`demo-lfp-4s-v1` profile. The pure normalizer in `lib/libresolar/` converts
+them to supported v1 values and quality reasons. The reusable publisher
+validates and publishes those messages. adds observation-based fault events
 and a bounded persistent producer outbox.
 
-The MQTT-to-MPM adapter is a separate consumer. The current A04 adapter
+The MQTT-to-MPM adapter is a separate consumer. The current adapter
 forwards summaries/events but does not publish durable `stored` receipts. The
 producer therefore retains unacknowledged events. B04's receipt/restart broker
 tests use a faithful adapter test double; they do not prove MPM database
 storage. Home Assistant is a read-only consumer for frequent measurements and
-history. Its B05 discovery implementation requires the separately tracked B05
-commit above; neither consumer changes the v1 message contract.
+history. Discovery is included; neither consumer changes the v1 message contract.
 
-References: [B01 source profile](simulator-source-profile.md),
-[B02 normalization](libresolar-normalization.md),
+References: [source profile](simulator-source-profile.md),
+[normalization](libresolar-normalization.md),
 [v1 message contract](message-contract.md),
-[B03 MQTT evidence](evidence/simulator-mqtt.md), and
-[B04 event/outbox evidence](evidence/simulator-events.md).
+[MQTT evidence](evidence/simulator-mqtt.md), and
+[event/outbox evidence](evidence/simulator-events.md).
 
 ## Requirements and project setup
 
 The verification environment used Node.js `24.21.0`, npm `11.19.0`, Docker
 Desktop `4.83.0` / Docker Engine `29.6.2`, Eclipse Mosquitto `2.1.2`, and Home
 Assistant Container `2026.10.1` for B05. Broker/HA images are pinned by digest
-in the evidence documents. There is no integrated A06 Compose stack in this
-repository at this baseline. These are verified environment versions, not a
-claim that every OS/version combination is tested.
+in the evidence documents and root Compose configuration.
+These are recorded environment versions, not a claim that every OS/version combination is tested.
 
 From Ubuntu/WSL, check installed tools:
 
@@ -89,7 +85,7 @@ power from either reported voltage without resolving that mapping.
 The profile's simulated scenario values are: cell overvoltage 3.65 V/reset
 3.50 V; undervoltage 2.80 V/reset 3.00 V; charge overtemperature 45 °C/reset
 42 °C; discharge overtemperature 60 °C/reset 57 °C. These are test inputs, not
-safe settings or recommendations for a physical pack. See the [B01 source
+safe settings or recommendations for a physical pack. See the [source
 map](simulator-source-profile.md) for source fields and limitations.
 
 Normal operation starts near 70% simulated SoC and uses approximately +5 A
@@ -142,9 +138,9 @@ node --import tsx scripts/verify-simulator-events.mjs
 ```
 
 The scripts create and clean up their own test containers and temporary files.
-The first checks B03 against Mosquitto; the second checks B04 receipt behavior
+The first checks against Mosquitto; the second checks receipt behavior
 with a durable adapter test double. Review the evidence before interpreting
-results. Neither changes shared A06 deployment configuration.
+results. These are isolated component checks.
 
 ## Configuration reference
 
@@ -181,7 +177,7 @@ unset MQTT_USERNAME MQTT_PASSWORD
 ```
 
 Do not use credentials with the anonymous local broker. Retry bounds are not
-CLI options: B04 uses exponential backoff from 1 to 30 seconds. Retry timer
+CLI options: uses exponential backoff from 1 to 30 seconds. Retry timer
 state resets on process restart; outbox event IDs and contents persist.
 
 ## Observe MQTT messages
@@ -189,7 +185,7 @@ state resets on process restart; outbox event IDs and contents persist.
 In MQTTX, connect to `127.0.0.1:1883` for the local broker (no TLS/login) and
 subscribe to `libresolar/bms/v1/#`. Telemetry is non-retained, so subscribe
 before starting the simulator. Add `homeassistant/device/+/config` only when
-using a B05 build. Do not expose the anonymous local broker to an untrusted or
+using a build. Do not expose the anonymous local broker to an untrusted or
 public network.
 
 With `mosquitto-clients` installed, from another WSL terminal:
@@ -239,7 +235,7 @@ approximately one second tick resolution. All commands run until stopped.
 | Cell undervoltage           | `node --import tsx app/simulator/main.ts --scenario cell-undervoltage --seed 17 --broker-url mqtt://127.0.0.1:1883 --outbox-path /tmp/bms-undervoltage.json`            | About 2–8 s: logical cell 1 is 2.75 V and `cell_undervoltage` is set. It resets to 3.00 V at about 8 s and returns to baseline.                                                                                                                                           |
 | Over-temperature            | `node --import tsx app/simulator/main.ts --scenario over-temperature --seed 17 --broker-url mqtt://127.0.0.1:1883 --outbox-path /tmp/bms-overtemp.json`                 | First battery sensor crosses the 45 °C charge threshold. At about 5 s current changes to discharge; the scenario switches to 60 °C discharge interpretation. It resets around 8 s. Expect observed fault transition(s) and recovery; electronics sensors remain separate. |
 | Increasing cell imbalance   | `node --import tsx app/simulator/main.ts --scenario increasing-cell-imbalance --seed 17 --broker-url mqtt://127.0.0.1:1883 --outbox-path /tmp/bms-imbalance.json`       | Cell 4 diverges from about 2–8 s; `cell_voltage_delta` increases and returns toward baseline by about 12 s. No fault flag/event is invented solely for imbalance.                                                                                                         |
-| Missing measurement         | `node --import tsx app/simulator/main.ts --scenario missing-reading --seed 17 --broker-url mqtt://127.0.0.1:1883 --outbox-path /tmp/bms-missing.json`                   | About 2–8 s `pack_current` is JSON `null` with B02 quality `not_reported`. Other fields continue; fault mask is still explicitly zero. This scenario does not omit cell or temperature readings.                                                                          |
+| Missing measurement         | `node --import tsx app/simulator/main.ts --scenario missing-reading --seed 17 --broker-url mqtt://127.0.0.1:1883 --outbox-path /tmp/bms-missing.json`                   | About 2–8 s `pack_current` is JSON `null` with quality `not_reported`. Other fields continue; fault mask is still explicitly zero. This scenario does not omit cell or temperature readings.                                                                              |
 | Connected-but-silent        | `node --import tsx app/simulator/main.ts --scenario connected-but-silent --seed 17 --gap-ms 1000 --broker-url mqtt://127.0.0.1:1883 --outbox-path /tmp/bms-silent.json` | MQTT connection remains up. Telemetry pauses after about 3 s for at least 5 s, then resumes and emits `observation_gap` with no invented fault transitions. At default gap 15000 ms the pause is about 16 s.                                                              |
 | Disconnect/reconnect        | `node --import tsx app/simulator/main.ts --scenario disconnect-reconnect --seed 17 --broker-url mqtt://127.0.0.1:1883 --outbox-path /tmp/bms-disconnect.json`           | Client stream is interrupted around 3 s. Observe reconnect and fresh telemetry. Broker may publish LWT offline; the process republishes online/attributes and keeps session identity after reconnect.                                                                     |
 | Recovery                    | `node --import tsx app/simulator/main.ts --scenario recovery --seed 17 --broker-url mqtt://127.0.0.1:1883 --outbox-path /tmp/bms-recovery.json`                         | Cell 4 and `cell_overvoltage` are observed from about 2–5 s. At about 5 s it uses the 3.50 V reset and clears; expect a recovery event.                                                                                                                                   |
@@ -296,14 +292,14 @@ node --import tsx app/simulator/main.ts \
 ```
 
 Replace the placeholder with a real pending ID. Replay fails when the ID is not
-present. The current A04 adapter forwards events but has no durable `stored`
-receipt support or durable queue. B04 receipt tests use a faithful file-backed
+present. The current adapter forwards events but has no durable `stored`
+receipt support or durable queue. receipt tests use a faithful file-backed
 test double. Exactly-once event rows in the MPM database remain unverified.
 
 ## Future physical-reader boundary
 
 A future physical reader supplies raw firmware observations and their actual
-observation time to B02 normalization using the selected profile. It then
+observation time to normalization using the selected profile. It then
 passes normalized measurements to the reusable publisher. The v1 MQTT contract
 remains unchanged for MPM and Home Assistant. Hardware code must not depend on
 simulator scenarios, seeded random generators or simulation timing. Physical
@@ -312,20 +308,20 @@ BMS board has been validated here.
 
 ## Troubleshooting
 
-| Symptom                         | Check and next action                                                                                                                                                                                            |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ECONNREFUSED 127.0.0.1:1883`   | Check the broker terminal and its bind output. Start `mosquitto -c docs/examples/mosquitto.local.conf -v` from the gateway root; verify the CLI URL points to a broker reachable from WSL.                       |
-| Missing Mosquitto container     | The manual path uses a local `mosquitto` executable. The automated verifier creates its own container; confirm Docker Desktop is running and inspect the verifier error.                                         |
-| Docker Desktop unavailable      | Start Docker Desktop, enable WSL integration for the active distro, and confirm `docker version` shows both client and server.                                                                                   |
-| Wrong broker host/port          | Use the address/port reachable from the simulator environment. `127.0.0.1` inside a container refers to that container; other containers need a confirmed shared network name. Do not guess an A06 Compose name. |
-| MQTT authentication failure     | The local example is anonymous. For an authenticated broker, check `MQTT_USERNAME`/`MQTT_PASSWORD` in the simulator environment and its ACL. Do not put passwords in a URL or repository.                        |
-| No subscribed messages          | Subscribe before starting; telemetry is non-retained. Use `libresolar/bms/v1/+/telemetry` or `libresolar/bms/v1/#`, and verify broker endpoint/node ID.                                                          |
-| MQTTX shows no data             | Connect MQTTX to the same host and port as the simulator. Check the exact topic prefix and start the simulator after subscription.                                                                               |
-| Retained summary seems stale    | Check `observed_at`, `last_source_observed_at`, and retained availability separately. Summary is last-known state, not proof of a current connection.                                                            |
-| No fault receipt                | Expected with current A04. Inspect events, outbox and adapter logs. QoS 1 broker acknowledgment is not durable application receipt; do not manually delete pending events.                                       |
-| `outbox_capacity_exceeded`      | Preserve the pending file and inspect event IDs. Resolve adapter receipt delivery and acknowledge events through the contract before reclaiming capacity.                                                        |
-| Invalid simulator configuration | Check `--help`, `--list-scenarios`, integer ranges, uppercase 16-hex node ID and profile support. Unknown/repeated flags are rejected.                                                                           |
-| Unexpected termination          | Inspect JSON errors and broker logs. Broker LWT may set retained availability offline. Restart with the same outbox path to recover events; process session ID will be new.                                      |
+| Symptom                         | Check and next action                                                                                                                                                                                                        |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ECONNREFUSED 127.0.0.1:1883`   | Check the broker terminal and its bind output. Start `mosquitto -c docs/examples/mosquitto.local.conf -v` from the gateway root; verify the CLI URL points to a broker reachable from WSL.                                   |
+| Missing Mosquitto container     | The manual path uses a local `mosquitto` executable. The automated verifier creates its own container; confirm Docker Desktop is running and inspect the verifier error.                                                     |
+| Docker Desktop unavailable      | Start Docker Desktop, enable WSL integration for the active distro, and confirm `docker version` shows both client and server.                                                                                               |
+| Wrong broker host/port          | Use the address/port reachable from the simulator environment. `127.0.0.1` inside a container refers to that container; other containers need a confirmed shared network name. The integrated Compose broker is `mqtt:1883`. |
+| MQTT authentication failure     | The local example is anonymous. For an authenticated broker, check `MQTT_USERNAME`/`MQTT_PASSWORD` in the simulator environment and its ACL. Do not put passwords in a URL or repository.                                    |
+| No subscribed messages          | Subscribe before starting; telemetry is non-retained. Use `libresolar/bms/v1/+/telemetry` or `libresolar/bms/v1/#`, and verify broker endpoint/node ID.                                                                      |
+| MQTTX shows no data             | Connect MQTTX to the same host and port as the simulator. Check the exact topic prefix and start the simulator after subscription.                                                                                           |
+| Retained summary seems stale    | Check `observed_at`, `last_source_observed_at`, and retained availability separately. Summary is last-known state, not proof of a current connection.                                                                        |
+| No fault receipt                | Expected with current A04. Inspect events, outbox and adapter logs. QoS 1 broker acknowledgment is not durable application receipt; do not manually delete pending events.                                                   |
+| `outbox_capacity_exceeded`      | Preserve the pending file and inspect event IDs. Resolve adapter receipt delivery and acknowledge events through the contract before reclaiming capacity.                                                                    |
+| Invalid simulator configuration | Check `--help`, `--list-scenarios`, integer ranges, uppercase 16-hex node ID and profile support. Unknown/repeated flags are rejected.                                                                                       |
+| Unexpected termination          | Inspect JSON errors and broker logs. Broker LWT may set retained availability offline. Restart with the same outbox path to recover events; process session ID will be new.                                                  |
 
 ## Verification commands
 

@@ -1,0 +1,3 @@
+[submodule "external/micropowermanager"]
+	path = external/micropowermanager
+	url = https://github.com/hubertnshuti/micropowermanager.git

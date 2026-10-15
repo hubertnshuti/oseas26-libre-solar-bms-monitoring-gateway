@@ -13,3 +13,5 @@ Thumbs.db
 
 *:Zone.Identifier
 .bms-runtime/
+
+.demo/
