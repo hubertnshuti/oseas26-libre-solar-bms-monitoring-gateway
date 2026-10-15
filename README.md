@@ -41,7 +41,6 @@ docker compose up -d --wait --wait-timeout 300
 
 Complete Home Assistant onboarding once, using the exact MQTT settings in the setup guide.
 Saved configuration and history persist across `docker compose stop` and the startup command.
-See the [five-minute demonstration](docs/demo.md) for the normal/fault sequence and presenter notes.
 
 ## Delivery status
 
