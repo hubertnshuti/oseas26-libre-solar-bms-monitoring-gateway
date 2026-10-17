@@ -1,0 +1,7 @@
+node_modules/
+dist/
+coverage/
+external/
+CHALLENGE.md
+PR_*.md
+.local/

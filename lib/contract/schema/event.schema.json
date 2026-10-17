@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:libresolar:bms:v1:event",
+  "title": "Libre Solar BMS v1 event",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "node_id": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/node_id"
+    },
+    "source": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/source"
+    },
+    "session_id": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/uuid"
+    },
+    "sequence": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/counter"
+    },
+    "message_id": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/message_id"
+    },
+    "observed_at": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/timestamp"
+    },
+    "published_at": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/timestamp"
+    },
+    "clock_source": {
+      "enum": ["simulator_host", "gateway_host", "device"]
+    },
+    "event_id": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/message_id"
+    },
+    "telemetry_message_id": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/message_id"
+    },
+    "kind": {
+      "enum": ["fault_observed", "fault_changed", "observation_gap"]
+    },
+    "previous_error_flags": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/mask"
+    },
+    "current_error_flags": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/mask"
+    },
+    "faults": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/faults"
+    },
+    "added_faults": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/fault_list"
+    },
+    "cleared_faults": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/fault_list"
+    }
+  },
+  "required": [
+    "schema_version",
+    "node_id",
+    "source",
+    "session_id",
+    "sequence",
+    "message_id",
+    "observed_at",
+    "published_at",
+    "clock_source",
+    "event_id",
+    "telemetry_message_id",
+    "kind",
+    "previous_error_flags",
+    "current_error_flags",
+    "faults",
+    "added_faults",
+    "cleared_faults"
+  ],
+  "additionalProperties": false
+}

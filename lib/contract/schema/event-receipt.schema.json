@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:libresolar:bms:v1:event-receipt",
+  "title": "Libre Solar BMS v1 event-receipt",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "node_id": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/node_id"
+    },
+    "source": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/source"
+    },
+    "message_id": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "event_id": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/message_id"
+    },
+    "consumer_id": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/identifier"
+    },
+    "status": {
+      "const": "stored"
+    }
+  },
+  "required": [
+    "schema_version",
+    "node_id",
+    "source",
+    "message_id",
+    "event_id",
+    "consumer_id",
+    "status"
+  ],
+  "additionalProperties": false
+}

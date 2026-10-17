@@ -1,0 +1,10 @@
+{
+  "result": "rejected",
+  "code": "invalid_payload",
+  "errors": [
+    {
+      "path": "/soc",
+      "code": "type"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:libresolar:bms:v1:status",
+  "title": "Libre Solar BMS v1 status",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "node_id": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/node_id"
+    },
+    "source": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/source"
+    },
+    "message_id": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "adapter_id": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/identifier"
+    },
+    "status_revision": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/counter"
+    },
+    "source_status": {
+      "enum": ["unknown", "fresh", "stale", "disconnected"]
+    },
+    "last_source_observed_at": {
+      "anyOf": [
+        {
+          "$ref": "urn:libresolar:bms:v1:common#/$defs/timestamp"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status_checked_at": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/timestamp"
+    }
+  },
+  "required": [
+    "schema_version",
+    "node_id",
+    "source",
+    "message_id",
+    "adapter_id",
+    "status_revision",
+    "source_status",
+    "last_source_observed_at",
+    "status_checked_at"
+  ],
+  "additionalProperties": false
+}

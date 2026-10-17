@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:libresolar:bms:v1:telemetry",
+  "title": "Libre Solar BMS v1 telemetry",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "node_id": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/node_id"
+    },
+    "source": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/source"
+    },
+    "session_id": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/uuid"
+    },
+    "sequence": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/counter"
+    },
+    "message_id": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/message_id"
+    },
+    "observed_at": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/timestamp"
+    },
+    "published_at": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/timestamp"
+    },
+    "clock_source": {
+      "enum": ["simulator_host", "gateway_host", "device"]
+    },
+    "soc": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/soc"
+    },
+    "soh": {
+      "type": "null"
+    },
+    "cycle_count": {
+      "type": "null"
+    },
+    "cell_voltage_delta": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/number_or_null"
+    },
+    "cell_temperature_max": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/number_or_null"
+    },
+    "component_temperature_max": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/number_or_null"
+    },
+    "bms_state_code": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/state_code"
+    },
+    "bms_state": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/state"
+    },
+    "error_flags": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/mask"
+    },
+    "faults": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/faults"
+    },
+    "quality": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/quality"
+    },
+    "pack_voltage_reported": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/number_or_null"
+    },
+    "stack_voltage_reported": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/number_or_null"
+    },
+    "pack_current": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/number_or_null"
+    },
+    "cell_voltage_min_reported": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/number_or_null"
+    },
+    "cell_voltage_max_reported": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/number_or_null"
+    },
+    "cell_voltage_avg_reported": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/number_or_null"
+    },
+    "ic_temperature": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/number_or_null"
+    },
+    "mosfet_temperature": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/number_or_null"
+    },
+    "shunt_temperature": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/number_or_null"
+    },
+    "cell_voltages": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:libresolar:bms:v1:common#/$defs/number_or_null"
+      },
+      "minItems": 1,
+      "maxItems": 16
+    },
+    "cell_temperatures": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:libresolar:bms:v1:common#/$defs/number_or_null"
+      },
+      "maxItems": 3
+    },
+    "balancing_mask": {
+      "$ref": "urn:libresolar:bms:v1:common#/$defs/mask"
+    }
+  },
+  "required": [
+    "schema_version",
+    "node_id",
+    "source",
+    "session_id",
+    "sequence",
+    "message_id",
+    "observed_at",
+    "published_at",
+    "clock_source",
+    "soc",
+    "soh",
+    "cycle_count",
+    "cell_voltage_delta",
+    "cell_temperature_max",
+    "component_temperature_max",
+    "bms_state_code",
+    "bms_state",
+    "error_flags",
+    "faults",
+    "quality",
+    "pack_voltage_reported",
+    "stack_voltage_reported",
+    "pack_current",
+    "cell_voltage_min_reported",
+    "cell_voltage_max_reported",
+    "cell_voltage_avg_reported",
+    "ic_temperature",
+    "mosfet_temperature",
+    "shunt_temperature",
+    "cell_voltages",
+    "cell_temperatures",
+    "balancing_mask"
+  ],
+  "additionalProperties": false
+}

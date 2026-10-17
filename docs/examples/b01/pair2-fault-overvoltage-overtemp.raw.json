@@ -1,0 +1,17 @@
+{
+  "Meas/rPackVoltage_V": 14.52,
+  "Meas/rStackVoltage_V": 14.5,
+  "Meas/rPackCurrent_A": 5.0,
+  "Meas/rSOC_pct": 98.5,
+  "Meas/rCellVoltages_V": [3.45, 3.68, 3.445, 3.445],
+  "Meas/rCellAvgVoltage_V": 3.505,
+  "Meas/rCellMinVoltage_V": 3.445,
+  "Meas/rCellMaxVoltage_V": 3.68,
+  "Meas/rCellTemps_degC": [46.2, null],
+  "Meas/rICTemp_degC": 38.0,
+  "Meas/rMOSFETTemp_degC": 42.5,
+  "Meas/rShuntTemp_degC": null,
+  "Meas/rBmsState": 1,
+  "Meas/rBalancingStatus": 2,
+  "Meas/rErrorFlags": 514
+}

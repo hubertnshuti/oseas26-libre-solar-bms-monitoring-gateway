@@ -1,0 +1,34 @@
+{
+  "node_id": "53494D0000000001",
+  "topic": "libresolar/bms/v1/53494D0000000001/summary",
+  "qos": 1,
+  "retain": true,
+  "delivery": "retained message received by a late subscriber",
+  "payload": {
+    "schema_version": 1,
+    "node_id": "53494D0000000001",
+    "source": "simulator",
+    "session_id": "a9f7b437-e1a1-4921-92ec-17f22a2e7cd9",
+    "sequence": 2,
+    "message_id": "53494D0000000001:a9f7b437-e1a1-4921-92ec-17f22a2e7cd9:summary:2",
+    "observed_at": "2026-10-14T14:41:10.033Z",
+    "published_at": "2026-10-14T14:41:10.036Z",
+    "clock_source": "simulator_host",
+    "soc": 70,
+    "soh": null,
+    "cycle_count": null,
+    "cell_voltage_delta": 0.00489,
+    "cell_temperature_max": 27.72,
+    "component_temperature_max": 34.99,
+    "bms_state_code": 3,
+    "bms_state": "NORMAL",
+    "error_flags": 0,
+    "faults": [],
+    "quality": {
+      "soh": "unsupported",
+      "cycle_count": "unsupported"
+    },
+    "telemetry_message_id": "53494D0000000001:a9f7b437-e1a1-4921-92ec-17f22a2e7cd9:telemetry:1",
+    "last_source_observed_at": "2026-10-14T14:41:10.033Z"
+  }
+}

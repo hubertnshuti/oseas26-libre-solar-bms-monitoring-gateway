@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:libresolar:bms:v1:common",
+  "$defs": {
+    "node_id": {
+      "type": "string",
+      "pattern": "^[0-9A-F]{16}$"
+    },
+    "uuid": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f-]{36}$"
+    },
+    "counter": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+    },
+    "source": {
+      "enum": ["simulator", "hardware"]
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+    },
+    "number_or_null": {
+      "type": ["number", "null"]
+    },
+    "soc": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 100
+    },
+    "mask": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "state_code": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "maximum": 255
+    },
+    "state": {
+      "enum": ["OFF", "CHG", "DIS", "NORMAL", "SHUTDOWN", "unknown", null]
+    },
+    "fault_code": {
+      "type": "string",
+      "enum": [
+        "cell_undervoltage",
+        "cell_overvoltage",
+        "short_circuit",
+        "discharge_overcurrent",
+        "charge_overcurrent",
+        "open_wire",
+        "discharge_undertemperature",
+        "discharge_overtemperature",
+        "charge_undertemperature",
+        "charge_overtemperature",
+        "internal_overtemperature",
+        "cell_failure",
+        "discharge_switch_off",
+        "charge_switch_off",
+        "mosfet_overtemperature",
+        "unknown_bit_15",
+        "unknown_bit_16",
+        "unknown_bit_17",
+        "unknown_bit_18",
+        "unknown_bit_19",
+        "unknown_bit_20",
+        "unknown_bit_21",
+        "unknown_bit_22",
+        "unknown_bit_23",
+        "unknown_bit_24",
+        "unknown_bit_25",
+        "unknown_bit_26",
+        "unknown_bit_27",
+        "unknown_bit_28",
+        "unknown_bit_29",
+        "unknown_bit_30",
+        "unknown_bit_31"
+      ]
+    },
+    "fault_list": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:libresolar:bms:v1:common#/$defs/fault_code"
+      },
+      "maxItems": 32,
+      "uniqueItems": true
+    },
+    "faults": {
+      "anyOf": [
+        {
+          "$ref": "urn:libresolar:bms:v1:common#/$defs/fault_list"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "quality_reason": {
+      "enum": [
+        "unsupported",
+        "not_reported",
+        "invalid_type",
+        "non_finite",
+        "incomplete",
+        "source_error"
+      ]
+    },
+    "quality": {
+      "type": "object",
+      "maxProperties": 64,
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]*(\\[(0|[1-9][0-9]?)\\])?$"
+      },
+      "additionalProperties": {
+        "$ref": "urn:libresolar:bms:v1:common#/$defs/quality_reason"
+      }
+    },
+    "message_id": {
+      "type": "string",
+      "maxLength": 160,
+      "pattern": "^[0-9A-F]{16}:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:(telemetry|summary|events|attributes):(0|[1-9][0-9]*)$"
+    }
+  }
+}

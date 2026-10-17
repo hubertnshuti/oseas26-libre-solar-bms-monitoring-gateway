@@ -1,0 +1,25 @@
+{
+  "name": "libre-solar-bms-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "format:check": "prettier --check README.md package.json package-lock.json tsconfig.json vitest.config.ts app lib tests docs .github/workflows/gateway-tooling.yml scripts/verify-mpm-ingest-broker.mjs",
+    "dev:mpm-ingest": "tsx --env-file=.env.mpm-ingest app/mpm-ingest/main.ts",
+    "test:mpm-ingest:broker": "node scripts/verify-mpm-ingest-broker.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.1",
+    "prettier": "3.9.9",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vitest": "5.0.3"
+  },
+  "dependencies": {
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "mqtt": "5.16.0"
+  }
+}

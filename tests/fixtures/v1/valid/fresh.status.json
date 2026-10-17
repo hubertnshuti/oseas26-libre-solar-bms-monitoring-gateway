@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "node_id": "53494D0000000001",
+  "source": "simulator",
+  "adapter_id": "mpm-demo",
+  "status_revision": 1,
+  "message_id": "53494D0000000001:mpm-demo:status:1",
+  "source_status": "fresh",
+  "last_source_observed_at": "2026-10-08T14:00:00.000Z",
+  "status_checked_at": "2026-10-08T14:00:00.000Z"
+}

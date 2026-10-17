@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "node_id": "53494D0000000001",
+  "source": "simulator",
+  "session_id": "15f75ec4-29ab-48ab-93be-81d3e0708a68",
+  "sequence": 123,
+  "message_id": "53494D0000000001:15f75ec4-29ab-48ab-93be-81d3e0708a68:events:123",
+  "observed_at": "2026-10-08T14:00:00.000Z",
+  "published_at": "2026-10-08T14:00:00.000Z",
+  "clock_source": "simulator_host",
+  "event_id": "53494D0000000001:15f75ec4-29ab-48ab-93be-81d3e0708a68:events:123",
+  "telemetry_message_id": "53494D0000000001:15f75ec4-29ab-48ab-93be-81d3e0708a68:telemetry:122",
+  "kind": "fault_changed",
+  "previous_error_flags": 0,
+  "current_error_flags": 130,
+  "faults": ["cell_overvoltage", "discharge_overtemperature"],
+  "added_faults": ["cell_overvoltage", "discharge_overtemperature"],
+  "cleared_faults": ["open_wire"]
+}

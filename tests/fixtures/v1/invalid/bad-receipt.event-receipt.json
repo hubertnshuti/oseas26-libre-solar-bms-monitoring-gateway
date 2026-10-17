@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "node_id": "53494D0000000001",
+  "source": "simulator",
+  "consumer_id": "mpm-demo",
+  "event_id": "53494D0000000001:15f75ec4-29ab-48ab-93be-81d3e0708a68:events:123",
+  "message_id": "53494D0000000001:15f75ec4-29ab-48ab-93be-81d3e0708a68:events:123:receipt:mpm-demo",
+  "status": "delivered"
+}
