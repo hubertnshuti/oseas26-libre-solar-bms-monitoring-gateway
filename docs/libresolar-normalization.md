@@ -1,10 +1,7 @@
 # Libre Solar Telemetry & Fault Normalization Library
 
 **Module Reference:** `lib/libresolar`
-**Card:** B02 — Field and Fault Conversion
-**Owner:** Member 2 — Simulator, MQTT Publisher, and Home Assistant Integration
-**Branch:** `feat/libresolar-normalization`
-**Status:** Implemented and verified locally against v1 contract; Hubert review pending.
+Validation and implementation details are described below.
 
 ---
 
@@ -232,7 +229,7 @@ const telemetryPayload = assembleTelemetryPayload(envelope, measurements);
 
 ---
 
-## 6. Team Handoff for Member 4 (Frontend UI)
+## 6. Operator display guidance
 
 For MicroPowerManager battery asset screens:
 
@@ -240,14 +237,14 @@ For MicroPowerManager battery asset screens:
 - **Handling Unknown High Bits:** If a firmware build sets an unassigned flag (e.g., bit 20 or bit 31), the decoded array will contain `unknown_bit_20` or `unknown_bit_31`. The UI should render this with an amber warning badge (e.g., `Warning: Unrecognized Fault (Bit 31)`).
 - **Legitimate Zero Current:** When `pack_current === 0`, display `0.0 A (Idle)` rather than treating the metric as unconfigured.
 
-## 7. Local verification and review handoff
+## 7. Verification
 
 From the gateway repository root, run `npm test -- tests/unit/libresolar.test.ts`,
-`npm run typecheck`, `npm run format:check`, and `npm test`. The B02 session
+`npm run typecheck`, `npm run format:check`, and `npm test`. The recorded normalization implementation checks
 passed all four commands; the targeted file passed 76 tests and the full suite
 passed 230 tests across 6 files. The full suite needed loopback permission for
 the existing adapter runtime tests. These checks do not demonstrate simulator,
 broker, hardware, or MPM integration.
 
-Hubert reviews profile/schema compatibility. Member 4 can use `FAULT_LABELS`
-and the normalized output names; the simulator publisher remains a later card.
+Consumers can use `FAULT_LABELS` and the normalized output names.
+The [simulator guide](simulator.md) describes the publisher that uses this library.

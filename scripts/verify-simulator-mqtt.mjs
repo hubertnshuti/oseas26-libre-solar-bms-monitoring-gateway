@@ -535,7 +535,7 @@ try {
   assert.equal(lwtCheck.deliveries[0].retain, true);
   assert.equal(lwtCheck.deliveries[0].qos, 1);
 
-  // Save one real MQTT-delivered summary as the B03 integration handoff fixture.
+  // Save a real MQTT-delivered summary for transport verification.
   const evidence = {
     node_id: nodeA,
     topic: `${prefix(nodeA)}/summary`,

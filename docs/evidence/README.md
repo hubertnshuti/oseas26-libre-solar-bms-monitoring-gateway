@@ -1,11 +1,14 @@
 # Verification records
 
-Start with [current delivery verification](delivery.md) for the prepared demonstration.
-Earlier records below describe their stated revisions and distinguish real services from test substitutes.
+Each record identifies its test environment, observed results, and limits.
+Historical component checks should not be treated as proof of a current full-stack acceptance run.
 
-- [Message contract validation](contract-validation.md)
-- [Adapter boundary and broker checks](adapter-baseline.md)
-- [Simulator MQTT behavior](simulator-mqtt.md)
-- [Simulator events and outbox](simulator-events.md)
-- [Home Assistant discovery and history](home-assistant-discovery.md)
-- [Earlier simulator demonstration](simulator-demo.md)
+- [Combined delivery and remaining checks](delivery.md)
+- [Actual simulator-to-MPM API capture](delivery-api.json)
+- [Application screenshots](screenshots/README.md)
+- [Contract validation](contract-validation.md)
+- [MQTT-to-MPM adapter](adapter-baseline.md)
+- [Simulator MQTT transport](simulator-mqtt.md)
+- [Producer events and outbox](simulator-events.md)
+- [Home Assistant discovery](home-assistant-discovery.md)
+- [Simulator and Home Assistant integration](simulator-demo.md)

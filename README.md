@@ -44,7 +44,7 @@ Saved configuration and history persist across `docker compose stop` and the sta
 
 ## Delivery status
 
-The MPM submodule pins merged team commit `9b102f2526167d18fb2e03f4aad297351a4eeef2`, containing backend and battery screens.
+The MPM submodule pins published commit `ab3a466f90e25240ea83e9fdcdbcb36ef849a90f`, containing backend and battery screens.
 The simulator, MQTT contract, discovery publisher, adapter, backend and screens are implemented.
 The combined Compose workflow is undergoing verification; consult the [verification record](docs/evidence/delivery.md) for actual results.
 Code presence and unit tests alone do not establish a working full demonstration.

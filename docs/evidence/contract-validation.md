@@ -20,7 +20,7 @@ calendar dates, reported versus derived aggregates, every fault bit including
 bit 31, event transitions and topic-node consistency. API detail examples use
 the same nested payloads. Delivery-case tests check input validity only.
 
-Not verified here: Hubert's WSL setup, component-owner agreement, PHP validation,
+Not verified here: other host environments, PHP validation,
 MPM HTTP endpoints, MQTT publishing/retention, durable queues, delivery ordering,
 freshness timers, Home Assistant, physical hardware or a battery integration.
 Record the eventual published contract commit and actual team review outcomes

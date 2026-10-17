@@ -26,7 +26,7 @@ export const KNOWN_FAULTS = [
 export type KnownFaultCode = (typeof KNOWN_FAULTS)[number];
 
 /**
- * Plain-English labels for Member 4 UI display and operator dashboards.
+ * Plain-English fault labels for operator dashboards.
  */
 export const FAULT_LABELS: Readonly<Record<KnownFaultCode, string>> = {
   cell_undervoltage: "Cell Undervoltage",

@@ -671,7 +671,8 @@ try {
     receipt_qos: storedReceipt.qos,
     receipt_retain: storedReceipt.retain,
     receipt: storedReceipt.payload,
-    receiver: "faithful durable MQTT test double, not the actual A04 adapter",
+    receiver:
+      "faithful durable MQTT test double, not the actual gateway adapter",
   };
   await writeFile(
     new URL("../docs/evidence/simulator-events.json", import.meta.url),
@@ -697,7 +698,7 @@ try {
         "connected-but-silent recovery emitted schema-valid observation_gap",
       ],
       adapter:
-        "faithful MQTT/durable-file test double; actual A04 adapter currently publishes no receipts",
+        "faithful MQTT/durable-file test double; actual gateway adapter currently publishes no receipts",
       durableTestDoubleUniqueEvents: uniqueEvents.length,
     })}\n`,
   );

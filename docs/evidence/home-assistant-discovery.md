@@ -1,62 +1,28 @@
-# B05 Home Assistant discovery evidence
+# Home Assistant discovery verification
 
 ## Environment
 
-- Home Assistant Container: `2026.10.1`, image digest
-  `sha256:130241f28d01fa80dfa3b44f7d89781c188d8642ecab9024f079f19f9f82baa0`.
-- Eclipse Mosquitto: `2.1.2`, image digest
-  `sha256:38c0da4f2ef84284d47b3b3eeea1cb3bdeabe81ee10caf0cd5c5ff61ee3ea408`.
-- Docker Desktop `4.83.0`, Engine `29.6.2`.
-- The B05 helper uses an isolated Docker network. Mosquitto is mapped only to
-  host loopback port `1885`; Home Assistant is mapped only to host loopback
-  port `8124`. HA reaches the broker at `b05-ha-mosquitto:1883`.
-- A06 shared services are not present in this checkout.
+Recorded component verification used Home Assistant Container `2026.10.1` and Eclipse Mosquitto `2.1.2`.
+Image digests:
 
-Start with `node scripts/home-assistant-local.mjs start`. The actual startup
-reported the image digests above, URLs `http://127.0.0.1:8124` and
-`mqtt://127.0.0.1:1885`, and a temporary config directory under `/tmp`.
-Home Assistant returned HTTP 302 on port 8124 and started successfully.
-Initial account creation and MQTT integration setup are interactive; no
-credentials are stored in this repository.
+- Home Assistant: `sha256:130241f28d01fa80dfa3b44f7d89781c188d8642ecab9024f079f19f9f82baa0`.
+- Mosquitto: `sha256:38c0da4f2ef84284d47b3b3eeea1cb3bdeabe81ee10caf0cd5c5ff61ee3ea408`.
 
-## Automated verification
+The isolated helper is `node scripts/home-assistant-local.mjs start`.
+Its default host ports are MQTT `1885` and Home Assistant `8124`; the combined Compose demo uses the ports in [quickstart](../quickstart.md).
 
-- `npm test -- tests/unit/discovery.test.ts tests/unit/publisher.test.ts tests/unit/simulator.test.ts tests/unit/events.test.ts tests/unit/outbox.test.ts tests/unit/scenarios.test.ts` — **6 files, 55 tests passed**.
-- `npm run typecheck` — passed.
-- `node --import tsx scripts/verify-simulator-mqtt.mjs` — passed against a real
-  Eclipse Mosquitto 2.1.2 broker. This includes retained device discovery,
-  the 16-component demo profile, only read-only platforms, late-subscriber
-  retained delivery at QoS 1, and republication after a simulated HA `online`
-  birth message. Existing B03 LWT, reconnect, node isolation and adapter
-  summary checks also passed. The simulated birth test is broker-level; it is
-  not counted as a Home Assistant UI test.
-- `node --import tsx scripts/verify-simulator-events.mjs` — B04 regression
-  passed using its faithful durable adapter/receipt test double. It does not
-  verify the real A04 adapter.
+## Recorded checks
 
-The discovery topic is
-`homeassistant/device/53494D0000000001/config`. It is retained at QoS 1. Its
-demo payload has root `device`/`origin` metadata and 16 stable components: 13
-numeric sensors, BMS State, Active Faults and Problem Status. Numeric and
-binary-sensor components expire after 15 seconds without telemetry. No
-command topic or writable platform is generated. See the broker verifier for
-runtime assertions and `docs/home-assistant.md` for the reproducible payload
-inspection and simulator command.
+- The targeted discovery/publisher/simulator/event/outbox/scenario tests passed: 55 tests across six files.
+- TypeScript checking passed.
+- `node --import tsx scripts/verify-simulator-mqtt.mjs` passed against the real broker.
+- The event harness passed with its durable receiver test double; it did not exercise real adapter receipts.
 
-## Home Assistant UI verification status
+The discovery topic is `homeassistant/device/53494D0000000001/config`, retained at QoS 1.
+The demo profile produces 16 stable components: 13 numeric sensors, BMS State, Active Faults, and Problem Status.
+The broker checks cover read-only platforms, late-subscriber discovery, and republication after a simulated Home Assistant online message.
+A simulated birth message is broker evidence, not a Home Assistant browser test.
+Numeric and binary-sensor components expire after 15 seconds without telemetry.
 
-**Pending user onboarding and UI observation.** The user is completing local
-first-run onboarding at `http://127.0.0.1:8124`, adding MQTT with host
-`b05-ha-mosquitto`, port `1883`, no credentials, and running the normal
-simulator against `mqtt://127.0.0.1:1885`. Until they report the visible
-device/entities/history, this evidence does not claim entities appeared in the
-UI. An early registry check, before confirmation that the simulator had been
-started, found zero matching devices and entities; this is not counted as a
-failed discovery run. Re-run the registry checker after the user has completed
-the setup and simulator steps to record device count, entity count, domains,
-stable IDs and absence of controls.
-
-Missing-field, 15-second source-silence, clean offline, HA restart and broker
-restart UI observations also remain pending actual execution in that onboarded
-instance. MQTT-level retention and simulated-birth behavior are covered above;
-they are not substitutes for those UI checks.
+Actual device registry, recorder, fault, missing-reading, silence, and restart observations are documented in [simulator integration evidence](simulator-demo.md).
+[Application screenshots](screenshots/README.md) show the resulting device page and measurements.

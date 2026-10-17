@@ -25,7 +25,7 @@ case "${1:-}" in
       exit 1
     fi
     docker compose config --quiet
-    expected=9b102f2526167d18fb2e03f4aad297351a4eeef2
+    expected=ab3a466f90e25240ea83e9fdcdbcb36ef849a90f
     [[ $(git -C external/micropowermanager rev-parse HEAD) == "$expected" ]] || { echo 'Initialize the pinned MPM submodule first.' >&2; exit 1; }
     [[ -z $(git -C external/micropowermanager status --porcelain) ]] || { echo 'MPM submodule has local changes; inspect them before building.' >&2; exit 1; }
     docker compose build backend

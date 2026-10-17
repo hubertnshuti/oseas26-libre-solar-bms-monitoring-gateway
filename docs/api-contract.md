@@ -1,9 +1,9 @@
 # MPM battery API contract v1
 
-Status: proposed interface for backend and adapter review. These routes and
-database behavior are not implemented by the gateway contract branch. Examples
-live in `tests/fixtures/v1/api/`; write payloads use the matching schemas and
-`valid/` fixtures. The MPM backend must implement and test every agreed rule.
+The pinned MPM submodule implements the battery ingestion and read endpoints described here.
+Examples live in `tests/fixtures/v1/api/`; write payloads use the matching versioned schemas and fixtures.
+The response/retry and freshness policies below describe the interface requirements.
+The current gateway adapter forwards summaries, events, and attributes, but does not yet implement durable retries, stored receipts, or source-status delivery.
 
 ## Ownership and authentication
 
@@ -13,14 +13,12 @@ The adapter has one company binding and node allowlist. Send
 company API key, never a payload company ID. Register the ingestion prefix with
 `ThirdPartyApiResolverService` and a company-key resolver using MPM's existing
 pattern. Adding `auth:api-key` alone does not establish correct tenant resolution.
-Member 3 must confirm this header and route wiring against the actual fork.
 
 Ingestion requires the plugin to be enabled, a provisioned battery-to-node link
 in that tenant, and an allowed adapter identity for status. Attributes update
 metadata only: they cannot create batteries, change ownership or link customers.
 Provisioning is an authenticated operator/administrative operation outside these
-ingest endpoints; its command and permissions must be implemented by the plugin
-owner. Two companies may use the same node string and still own distinct records.
+ingest endpoints; the MPM plugin supplies the command and required permissions. Two companies may use the same node string and still own distinct records.
 Do not expose battery data across tenants. Read endpoints use existing MPM user
 authentication and permissions, not ingestion company keys or sidebar visibility.
 
@@ -93,7 +91,7 @@ returns HTML. Network failures and lost responses are retried with unchanged
 payloads. Semantic duplicate comparison ignores object-key order and JSON number
 spelling (5 and 5.0), preserves array order, and includes all supplied fields,
 including first publication time. The PHP and TypeScript sides must agree before
-introducing a content hash. No wire hash algorithm is defined in this draft.
+introducing a content hash. No wire hash algorithm is defined by this contract.
 
 ## Ordering, duplicates and sessions
 
@@ -113,14 +111,13 @@ metrics; event arrival order is not the current-state order.
 The first authenticated session may establish last known state even if its
 observation is old, but must be labeled old and cannot imply source freshness.
 Promotion to a different session requires a plausible observation newer than the
-current snapshot and within a proposed 150-second receipt-age window, with at
+current snapshot and within a 150-second receipt-age window, with at
 most 5 seconds future clock skew. Record the session transition and retire the
 previous session. Delayed retired-session snapshots are ignored. Unknown sessions
 that cannot meet these conditions yield `session_conflict` rather than guessed
 UUID ordering. Promotion locks/checks shared node session state atomically;
-metadata alone cannot authenticate a live new session. These clock limits and
-the provisioning/reconciliation mechanism require member 3's review. Until a
-safe promotion can be proven, retain current data and expose the conflict.
+metadata alone cannot promote a new session. Retain current data and expose
+a conflict when a new session cannot meet the promotion rules.
 
 ## Status ordering and freshness
 
@@ -161,8 +158,6 @@ rules as well as the schemas. Confirm that the selected PHP validator supports
 Draft 2020-12 and asserts formats. Do not maintain independently edited payloads.
 Updating a PHP copy requires a reviewed gateway commit and new provenance.
 
-Member 3 must prove tenant isolation with two companies sharing the same node
-string, route resolver behavior, provisioning, concurrent duplicates/conflicts,
-ordering and status-check ageing. Member 4 reviews read examples and wording.
-The pending decisions and fallbacks are in
-[the contract decision record](decisions/0002-message-contract-v1.md).
+Backend verification must cover tenant isolation with two companies sharing a node string, route resolution, provisioning, duplicates/conflicts, ordering, and status-check ageing.
+Concurrent delivery and lost-response recovery need dedicated integration checks in addition to fixture tests.
+See [the contract decision record](decisions/0002-message-contract-v1.md) and [delivery verification](evidence/delivery.md) for current boundaries.

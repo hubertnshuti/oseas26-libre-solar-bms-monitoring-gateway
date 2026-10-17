@@ -16,7 +16,7 @@ git submodule status
 bash deploy/demo.sh configure
 ```
 
-Expected: MPM is at `9b102f2526167d18fb2e03f4aad297351a4eeef2`; `.env` contains generated local secrets.
+Expected: MPM is at `ab3a466f90e25240ea83e9fdcdbcb36ef849a90f`; `.env` contains generated local secrets.
 The configuration helper preserves an existing `.env`.
 Do not use `git submodule update --remote`: that would select a moving revision instead of the recorded one.
 

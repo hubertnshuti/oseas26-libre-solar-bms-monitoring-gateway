@@ -1,29 +1,13 @@
-# Libre Solar BMS Source Mapping & Demo Battery Profile
+# Libre Solar BMS source mapping and demo battery profile
 
-**Document Reference:** B01 Baseline Specification  
-**Owner:** Member 2 — Simulator, MQTT Publisher, and Home Assistant Integration  
-**Repository Branch:** `docs/simulator-source-profile`  
-**Base Commit:** `59930ce` (`team/bms-monitoring`)  
-**Firmware Reference Target:** [LibreSolar/bms-firmware](https://github.com/LibreSolar/bms-firmware) at commit `779d20199bff2666e01371ce2f562dcda4d6bda3`  
-**Status:** Complete B01 Deliverable ready for team review and handoff.
+Firmware reference: [LibreSolar/bms-firmware](https://github.com/LibreSolar/bms-firmware) at `779d20199bff2666e01371ce2f562dcda4d6bda3`.
 
----
+## 1. Scope and verification boundary
 
-## 1. Scope and Verification Boundary
-
-This document establishes the authoritative source mapping, unit dictionary, and battery demonstration profile for Role B (the BMS Simulator, MQTT Publisher, and Home Assistant auto-discovery).
-
-### Access and Firmware Verification Transparency
-
-During task execution, direct cloning and live inspection of the external C firmware repository was restricted by sandbox environment policy:
-
-1. **Filesystem Sandbox Isolation:** The parent directory `~/work/oseas/` is mounted read-only outside the active repository workspace (`gateway/`), blocking creation of a sibling clone directory `bms-reference/`.
-2. **Network Sandbox Isolation:** Standard sandbox mode prohibits outbound network connections.
-3. **Out-of-Band Tool Denial:** Direct URL access to `raw.githubusercontent.com` was denied by user permission check.
-
-**Boundary Statement:** The mappings in this document are derived from the authoritative versioned contract files established in this repository (`lib/contract/fields.json`, `lib/contract/types.ts`, `lib/contract/validate.ts`, `lib/contract/profiles/demo-lfp-4s-v1.json`, and ADR 0002). We do not claim independent compilation or live verification against the physical C headers. If direct firmware C inspection at commit `779d20199bff2666e01371ce2f562dcda4d6bda3` reveals discrepancies with `lib/contract/fields.json`, those changes will be escalated to Hubert (Integration Lead) through the formal contract review process.
-
----
+This document describes the field mapping, units, and constructed battery profile used by the simulator and normalized MQTT contract.
+Mappings are derived from the versioned repository references: `lib/contract/fields.json`, `lib/contract/types.ts`, `lib/contract/validate.ts`, and `lib/contract/profiles/demo-lfp-4s-v1.json`.
+Independent compilation or verification against physical hardware has not been performed.
+Any discrepancy found during firmware inspection must be reconciled through the contract/schema review process before changing producer output.
 
 ## 2. Source Field Mapping (ThingSet `Meas` Data Objects)
 
@@ -70,7 +54,7 @@ The Libre Solar BMS exposes live telemetry via ThingSet data objects grouped und
 ### B. Legitimate Zero vs Missing / Null Readings
 
 - A reading of `0 V` on a cell voltage is a valid physical observation of a dead, shorted, or disconnected cell, whereas a sensor failure where the ADC cannot report a reading must be represented as `null` with an accompanying `quality` reason (`"source_error"`, `"not_reported"`, etc.).
-- `error_flags = 0` means explicitly zero faults active (healthy pack). `error_flags = null` means the fault register is unavailable.
+- `error_flags = 0` means no active fault bits were reported; it does not establish overall battery health. `error_flags = null` means the fault register is unavailable.
 
 ### C. BMS State Codes
 
@@ -353,7 +337,7 @@ _Contract Invariants Enforced in Pair 2:_
 
 ## 6. Team Handoff
 
-### A. For Member 3 — MicroPowerManager (MPM) Backend Integration
+### A. MicroPowerManager backend integration
 
 MPM receives decision-relevant asset metadata and summaries, **not** high-resolution timeseries or per-cell telemetry arrays.
 
@@ -398,22 +382,22 @@ MPM receives decision-relevant asset metadata and summaries, **not** high-resolu
 
 ---
 
-### B. For Member 4 — MPM Screens & Frontend UI
+### B. Operator display semantics
 
 The table below explains what each metric means in plain English, how it should be displayed, and expected normal/alarm conditions:
 
-| Display Label              | Contract Field               | Unit | Plain-English Explanation                                                                          | UI Display Guidance                                                                                 |
-| -------------------------- | ---------------------------- | ---- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| **State of Charge**        | `soc`                        | `%`  | Percentage of usable battery capacity currently remaining (0.0% = empty, 100.0% = full).           | Gauge or progress bar. Normal range: 20% to 95%.                                                    |
-| **Pack Voltage**           | `pack_voltage_reported`      | `V`  | Voltage measured at the battery pack terminals.                                                    | Single decimal precision (e.g. `13.2 V`). Label as "Pack Voltage (Reported)".                       |
-| **Stack Voltage**          | `stack_voltage_reported`     | `V`  | Voltage measured across the cell stack before protection switches.                                 | Single decimal precision (e.g. `13.2 V`). Label as "Stack Voltage (Reported)".                      |
-| **Battery Current**        | `pack_current`               | `A`  | Current flowing into or out of the battery. Positive = charging, Negative = discharging.           | Display sign and state (e.g. `+5.0 A (Charging)`, `-5.0 A (Discharging)`, `0.0 A (Idle)`).          |
-| **Cell Imbalance (Delta)** | `cell_voltage_delta`         | `V`  | Difference between the highest and lowest cell voltage in the pack (`V_max - V_min`).              | Millivolt precision (e.g. `6 mV`). Flag warning if delta > 50 mV; flag alarm if > 150 mV.           |
-| **Max Cell Temp**          | `cell_temperature_max`       | `°C` | The highest temperature measured among battery cells.                                              | Integer or 1 decimal (e.g. `28.1 °C`). Alarm if > 45 °C while charging.                             |
-| **Max Board Temp**         | `component_temperature_max`  | `°C` | Highest temperature measured among electronic switches (MOSFETs) or the BMS IC.                    | Normal up to ~55 °C under high load. Alarm if > 70 °C.                                              |
-| **BMS Switch State**       | `bms_state`                  | Text | Conduction state of the electronic protection switches: `NORMAL`, `CHG`, `DIS`, `OFF`, `SHUTDOWN`. | Badge color: Green for `NORMAL`, Blue for `CHG`/`DIS`, Red/Amber for `OFF`/`SHUTDOWN`.              |
-| **Active Faults**          | `faults`                     | List | Decoded alarm conditions (e.g. `cell_overvoltage`, `charge_overtemperature`).                      | Empty `[]` displays green "Healthy". Non-empty displays red fault badges with readable names.       |
-| **Data Freshness**         | `observed_at` vs local clock | Time | How long ago the measurement was taken by the BMS.                                                 | Display relative age (e.g. "Updated 42s ago"). Do not flag disconnected until source silence > 15s. |
+| Display Label              | Contract Field               | Unit | Plain-English Explanation                                                                          | UI Display Guidance                                                                                     |
+| -------------------------- | ---------------------------- | ---- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **State of Charge**        | `soc`                        | `%`  | Percentage of usable battery capacity currently remaining (0.0% = empty, 100.0% = full).           | Display the reported percentage without inferring a health score.                                       |
+| **Pack Voltage**           | `pack_voltage_reported`      | `V`  | Reported pack-voltage field; physical terminal interpretation is unresolved.                       | Single decimal precision (e.g. `13.2 V`). Label as "Pack Voltage (Reported)".                           |
+| **Stack Voltage**          | `stack_voltage_reported`     | `V`  | Reported stack-voltage field; preserve its identity separately from pack voltage.                  | Single decimal precision (e.g. `13.2 V`). Label as "Stack Voltage (Reported)".                          |
+| **Battery Current**        | `pack_current`               | `A`  | Current flowing into or out of the battery. Positive = charging, Negative = discharging.           | Display sign and state (e.g. `+5.0 A (Charging)`, `-5.0 A (Discharging)`, `0.0 A (Idle)`).              |
+| **Cell Imbalance (Delta)** | `cell_voltage_delta`         | `V`  | Difference between the highest and lowest cell voltage in the pack (`V_max - V_min`).              | Display the numeric spread and unit; derive fault labels only from reported fault information.          |
+| **Max Cell Temp**          | `cell_temperature_max`       | `°C` | The highest temperature measured among battery cells.                                              | Display the temperature and unit; protection thresholds depend on the configured battery.               |
+| **Max Board Temp**         | `component_temperature_max`  | `°C` | Highest temperature measured among electronic switches (MOSFETs) or the BMS IC.                    | Keep electronics temperature separate from battery temperature; do not invent alarm thresholds.         |
+| **BMS Switch State**       | `bms_state`                  | Text | Conduction state of the electronic protection switches: `NORMAL`, `CHG`, `DIS`, `OFF`, `SHUTDOWN`. | Display the state label; switch state alone does not establish battery health or current flow.          |
+| **Active Faults**          | `faults`                     | List | Decoded alarm conditions (e.g. `cell_overvoltage`, `charge_overtemperature`).                      | Known empty `[]` means no known active faults reported; null means unavailable. Preserve unknown codes. |
+| **Data Freshness**         | `observed_at` vs local clock | Time | How long ago the measurement was taken by the BMS.                                                 | Show observation age separately from source/integration assessments; summary age is not source silence. |
 
 ---
 
@@ -421,16 +405,18 @@ The table below explains what each metric means in plain English, how it should 
 
 1. **Firmware Mismatch Open Question:** In the Texas Instruments BQ769x2 driver, PACK and STACK pin bindings differ between firmware revisions. Both fields remain strictly separate; no single "terminal voltage" is guessed.
 2. **SoH and Cycles:** Because the pinned Libre Solar firmware does not calculate state of health or cycle counts, both are null. UI must display "Not Supported" rather than "0%".
-3. **Outbox Durability for B04:** In task B04, the simulator publisher will implement a persistent, file-backed outbox to survive producer restarts until `receipts/mpm` is received.
+3. **Event delivery:** The simulator has a persistent file-backed outbox. The current adapter lacks durable HTTP retries and stored-event receipts; end-to-end outage recovery remains incomplete.
 
 ---
 
-## 8. Verification and Compliance
+## 8. Verification
 
-All examples and schemas in this document have been validated:
+The examples are covered by contract validation tests:
 
 - `tests/unit/b01-examples.test.ts` validates both telemetry pairs and the summary payload against `validateMessage()`.
 - Repository checks pass:
   - `npm run typecheck` (TypeScript strict mode)
   - `npm run format:check` (Prettier code style)
-  - `npm test` (154/154 tests passing across 5 test files)
+  - `npm test`
+
+Recorded results and their revisions are in [the evidence directory](evidence/README.md).

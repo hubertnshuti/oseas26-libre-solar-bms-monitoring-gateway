@@ -1,4 +1,4 @@
-# B03 simulator MQTT verification
+# Simulator MQTT verification
 
 ## Environment and command
 
@@ -48,7 +48,7 @@ summary, attributes and availability were delivered at QoS 1. The `retain` flag
 was false for live publications and true when retained records were sent to a
 new subscriber.
 
-## Summary handoff
+## Captured summary
 
 The payload captured from the real broker is in
 [`simulator-mqtt-summary.json`](simulator-mqtt-summary.json). Its topic is
@@ -61,5 +61,5 @@ validator used by the adapter.
 This evidence uses a local broker and a fake HTTP destination. It proves MQTT
 transport and contract compatibility for this simulator slice, not MPM storage,
 Home Assistant entities, hardware behavior, durable events, or production broker
-security. B04 fault scenarios/outbox, B05 Home Assistant discovery, and A06
-shared broker configuration remain outside this card.
+security. Fault/outbox and Home Assistant observations are documented in
+their separate verification records.

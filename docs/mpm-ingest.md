@@ -1,7 +1,7 @@
 # MQTT-to-MPM adapter
 
 The adapter subscribes to configured battery nodes and delivers validated summaries,
-events and attributes to the proposed v1 MPM API.
+events and attributes to the v1 MPM API.
 Telemetry and availability are validated without HTTP writes.
 Verification includes both a limited MQTT protocol peer and an authenticated real
 Mosquitto broker, each with a fake HTTP endpoint.
@@ -13,8 +13,8 @@ Use Node from `.nvmrc` and run these commands from the gateway root.
 Prerequisites for runtime: an authenticated MQTT broker reachable from this machine,
 its username/password, an MPM backend with the Libre Solar plugin enabled, a company
 API key, and batteries provisioned for the allowed node IDs.
-The companion MPM team revision checked for this task has no Libre Solar plugin yet;
-coordinate these backend values and provisioning with its owner before real delivery.
+The pinned MPM submodule includes the plugin and provisioning command.
+Follow [the quickstart](quickstart.md) for the combined demo, or provision an existing backend through its documented administrative command.
 
 ```bash
 nvm use
@@ -111,7 +111,7 @@ These test substitutes do not prove broker ACLs, retained messages, real tenant
 isolation, actual MPM storage or screen behavior.
 If a restricted runner rejects socket access with `EPERM`, rerun in an environment
 that permits loopback servers; do not disable the tests.
-See [verification and handoff evidence](evidence/adapter-baseline.md).
+See [adapter verification](evidence/adapter-baseline.md).
 
 | Log or symptom                      | Next action                                                                                                                          |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
@@ -125,11 +125,9 @@ See [verification and handoff evidence](evidence/adapter-baseline.md).
 | `delivery_failed`                   | Restore endpoint access and arrange replay from the producer; this slice does not retry automatically                                |
 | `capacity_exceeded`                 | Slow the producer or fix the endpoint; increasing the cap does not add durability                                                    |
 
-For the real handoff, the publisher owner supplies the summary publish command,
-the backend owner provisions the node and verifies the stored source/SoC, and the
-screen owner supplies the corresponding running battery screen evidence.
-Record both repository revisions and original message ID; a fake-server result
-alone cannot close the first end-to-end delivery task.
+For actual integration verification, run the [combined demo](quickstart.md), publish a simulator summary, and compare its source, node, observation time, and SoC with the signed-in MPM response.
+Record both repository revisions and the original message ID.
+The [delivery record](evidence/delivery.md) distinguishes actual storage from fake-server checks.
 
 ## Real Mosquitto verification
 

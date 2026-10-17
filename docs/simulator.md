@@ -13,12 +13,12 @@ setting, or proof of firmware behavior.
 `app/simulator/` generates repeatable raw readings from the
 `demo-lfp-4s-v1` profile. The pure normalizer in `lib/libresolar/` converts
 them to supported v1 values and quality reasons. The reusable publisher
-validates and publishes those messages. adds observation-based fault events
-and a bounded persistent producer outbox.
+validates and publishes those messages, records observation-based fault events,
+and maintains a bounded persistent producer outbox.
 
 The MQTT-to-MPM adapter is a separate consumer. The current adapter
 forwards summaries/events but does not publish durable `stored` receipts. The
-producer therefore retains unacknowledged events. B04's receipt/restart broker
+producer therefore retains unacknowledged events. The receipt/restart broker
 tests use a faithful adapter test double; they do not prove MPM database
 storage. Home Assistant is a read-only consumer for frequent measurements and
 history. Discovery is included; neither consumer changes the v1 message contract.
@@ -33,7 +33,7 @@ References: [source profile](simulator-source-profile.md),
 
 The verification environment used Node.js `24.21.0`, npm `11.19.0`, Docker
 Desktop `4.83.0` / Docker Engine `29.6.2`, Eclipse Mosquitto `2.1.2`, and Home
-Assistant Container `2026.10.1` for B05. Broker/HA images are pinned by digest
+Assistant Container `2026.10.1`. Broker/HA images are pinned by digest
 in the evidence documents and root Compose configuration.
 These are recorded environment versions, not a claim that every OS/version combination is tested.
 
@@ -59,13 +59,12 @@ In the gateway directory, select Node from `.nvmrc` and install locked
 dependencies:
 
 ```bash
-cd /home/evariste/work/oseas/gateway
 nvm install
 nvm use
 npm ci
 ```
 
-For a clone elsewhere, use that clone's gateway path. The checked-in `.nvmrc`
+Run these commands from your gateway checkout. The checked-in `.nvmrc`
 selects Node `24.21.0`.
 
 ## Demo profile
@@ -318,7 +317,7 @@ BMS board has been validated here.
 | No subscribed messages          | Subscribe before starting; telemetry is non-retained. Use `libresolar/bms/v1/+/telemetry` or `libresolar/bms/v1/#`, and verify broker endpoint/node ID.                                                                      |
 | MQTTX shows no data             | Connect MQTTX to the same host and port as the simulator. Check the exact topic prefix and start the simulator after subscription.                                                                                           |
 | Retained summary seems stale    | Check `observed_at`, `last_source_observed_at`, and retained availability separately. Summary is last-known state, not proof of a current connection.                                                                        |
-| No fault receipt                | Expected with current A04. Inspect events, outbox and adapter logs. QoS 1 broker acknowledgment is not durable application receipt; do not manually delete pending events.                                                   |
+| No fault receipt                | Expected with the current adapter. Inspect events, outbox and adapter logs. QoS 1 broker acknowledgment is not durable application receipt; do not manually delete pending events.                                           |
 | `outbox_capacity_exceeded`      | Preserve the pending file and inspect event IDs. Resolve adapter receipt delivery and acknowledge events through the contract before reclaiming capacity.                                                                    |
 | Invalid simulator configuration | Check `--help`, `--list-scenarios`, integer ranges, uppercase 16-hex node ID and profile support. Unknown/repeated flags are rejected.                                                                                       |
 | Unexpected termination          | Inspect JSON errors and broker logs. Broker LWT may set retained availability offline. Restart with the same outbox path to recover events; process session ID will be new.                                                  |

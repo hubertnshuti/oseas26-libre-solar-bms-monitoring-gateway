@@ -15,3 +15,7 @@ Thumbs.db
 .bms-runtime/
 
 .demo/
+
+# Local authoring drafts and working notes.
+/PR_*.md
+/.local/

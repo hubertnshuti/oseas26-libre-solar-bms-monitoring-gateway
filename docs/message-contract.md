@@ -1,8 +1,8 @@
 # Message contract v1
 
-Status: review draft. The JSON schemas, semantic validator and versioned examples
-are implemented here. The simulator, broker, delivery queues and MPM endpoints
-are separate work. Team approval and a working integration are not claimed.
+The gateway implements the JSON schemas, semantic validator, simulator, and publisher for this versioned interface.
+The pinned MPM submodule implements the ingestion/read API.
+Adapter durable retries, stored-event receipts, and source-status delivery remain incomplete; the contract defines their required semantics.
 
 ## Files and validation
 
@@ -168,8 +168,8 @@ not generate one event per telemetry packet. Event IDs and content are stable
 across retries. A receipt with `status: stored` means the configured adapter
 has committed the event to its durable queue. It does not mean MPM has accepted
 it. Producers validate node/event/source/consumer identity before retiring their
-durable outbox item. Queues, receipts and restart recovery are not implemented
-by this contract change.
+durable outbox item. The producer outbox is implemented; actual adapter queue
+persistence and receipt publication remain incomplete.
 
 ## Demo profile and review
 
@@ -182,8 +182,6 @@ recovery values and ±5 A scenarios are software demonstration values, not
 recommended settings for any physical battery. They do not implement firmware
 protection delays or establish hardware fidelity.
 
-Before freeze, review [the decision record](decisions/0002-message-contract-v1.md):
-member 2 confirms profile/channel/field/event choices, member 3 confirms API and
-PHP validation, member 4 confirms read shapes and freshness labels. Freeze only
-after recording their actual outcomes. Breaking units or meaning needs a new
-major topic version; reviewed additive schema changes need updated fixtures.
+Interface changes require review of producer/consumer compatibility and the shared fixtures.
+See [the decision record](decisions/0002-message-contract-v1.md).
+Breaking changes to units or meaning require a new major topic version; additive schema changes require updated fixtures.
