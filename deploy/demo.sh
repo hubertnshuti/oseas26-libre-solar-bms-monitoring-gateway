@@ -25,9 +25,12 @@ case "${1:-}" in
       exit 1
     fi
     docker compose config --quiet
-    expected=ab3a466f90e25240ea83e9fdcdbcb36ef849a90f
-    [[ $(git -C external/micropowermanager rev-parse HEAD) == "$expected" ]] || { echo 'Initialize the pinned MPM submodule first.' >&2; exit 1; }
+    expected=$(git ls-tree HEAD external/micropowermanager | awk '$1 == "160000" { print $3 }')
+    [[ -n "$expected" && -e external/micropowermanager/.git ]] || { echo 'Run git submodule update --init --recursive first.' >&2; exit 1; }
+    [[ $(git -C external/micropowermanager rev-parse HEAD) == "$expected" ]] || { echo 'MPM does not match this gateway revision. Run git submodule update --init --recursive.' >&2; exit 1; }
     [[ -z $(git -C external/micropowermanager status --porcelain) ]] || { echo 'MPM submodule has local changes; inspect them before building.' >&2; exit 1; }
+    umask 077
+    mkdir -p .demo
     docker compose build backend
     docker compose run --rm --no-deps dependencies
     docker compose build adapter

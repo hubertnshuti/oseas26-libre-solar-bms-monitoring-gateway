@@ -33,3 +33,8 @@ The short overvoltage scenario is active approximately from second 2 to second 8
 
 See [the demonstration guide](../demo.md) for scenario commands and [the setup guide](../quickstart.md) for installation.
 Earlier component evidence retains its original verification scope and revisions.
+
+## Subsequent setup and display corrections
+
+The [setup and display verification](ui-readiness.md) records the later MPM corrections and their own test scope.
+The original results above retain their recorded revisions.

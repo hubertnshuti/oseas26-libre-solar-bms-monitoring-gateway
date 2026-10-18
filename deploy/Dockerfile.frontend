@@ -3,13 +3,14 @@ WORKDIR /app
 COPY src/frontend/package.json src/frontend/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY src/frontend/ ./
-# A single build worker avoids exhausting memory on small demonstration machines.
-RUN printf 'module.exports = {...require("./vue.config.js"), parallel: false}\n' > vue.demo.config.js
-ARG MPM_BACKEND_URL
+# Limit build memory; development builds retain source maps for debugging.
+RUN printf 'module.exports = {...require("./vue.config.js"), parallel: false, productionSourceMap: false}\n' > vue.demo.config.js
 ENV NODE_OPTIONS=--max-old-space-size=1536
 ENV VUE_CLI_SERVICE_CONFIG_PATH=/app/vue.demo.config.js
 ENV MPM_ENV=production
-RUN test -n "$MPM_BACKEND_URL" && npm run build && MPM_BACKEND_URL="$MPM_BACKEND_URL" node node_modules/@import-meta-env/cli/bin/import-meta-env.js -x .env.example -p dist/index.html
+RUN npm run build
+ARG MPM_BACKEND_URL
+RUN test -n "$MPM_BACKEND_URL" && MPM_BACKEND_URL="$MPM_BACKEND_URL" node node_modules/@import-meta-env/cli/bin/import-meta-env.js -x .env.example -p dist/index.html
 FROM nginx:1.27-alpine3.20@sha256:814a8e88df978ade80e584cc5b333144b9372a8e3c98872d07137dbf3b44d0e4
 COPY --from=build /app/dist /usr/share/nginx/html
 RUN printf 'server { listen 80; root /usr/share/nginx/html; location / { try_files $uri $uri/ /index.html; } }\n' > /etc/nginx/conf.d/default.conf

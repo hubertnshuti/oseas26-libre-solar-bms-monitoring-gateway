@@ -16,7 +16,7 @@ git submodule status
 bash deploy/demo.sh configure
 ```
 
-Expected: MPM is at `ab3a466f90e25240ea83e9fdcdbcb36ef849a90f`; `.env` contains generated local secrets.
+Expected: `git submodule status` shows the recorded MPM revision with a leading space, rather than `-` (uninitialized) or `+` (a different revision); `.env` contains generated local secrets.
 The configuration helper preserves an existing `.env`.
 Do not use `git submodule update --remote`: that would select a moving revision instead of the recorded one.
 
@@ -31,7 +31,9 @@ docker compose config --quiet
 ```
 
 Expected: configuration validation exits successfully without output.
-No fixed container names are used; all named volumes belong to the selected Compose project.
+No fixed container names are used; named volumes and locally built image tags belong to the selected Compose project.
+For a second installation, use a separate checkout, a different project name and unused host ports.
+Advanced users can override image tags with `MPM_BACKEND_IMAGE`, `MPM_FRONTEND_IMAGE` and `GATEWAY_IMAGE`; do not share mutable image tags between installations.
 Do not print full `docker compose config` output in shared logs because it includes secrets.
 Keep `.env` and `.demo/` private and backed up; both are excluded from Git.
 
@@ -39,7 +41,8 @@ Keep `.env` and `.demo/` private and backed up; both are excluded from Git.
 
 Complete builds and downloads before rehearsal.
 On a machine with about 3.5 GiB available to Docker, stop this demo’s application services before rebuilding the frontend; keep unrelated services untouched.
-The measured production build took about 18 minutes under memory pressure, so first installation is not instantaneous.
+Avoid running frontend builds, backend tests and another complete stack concurrently on a memory-constrained host.
+First installation is not instantaneous; build time depends on memory, CPU, network and available Docker cache.
 The install command builds sequentially, installs locked backend dependencies, initializes an isolated database, enables the plugin, provisions the simulated node and starts the services.
 It creates the standard MPM demonstration company with ID `1`; this is only appropriate for this new demo database.
 It must not be pointed at another installation's database or volumes.
@@ -57,6 +60,7 @@ The adapter key is copied to `.demo/adapter.key` without printing it and is moun
 Company identity is determined by that authenticated key, not by an HTTP payload field.
 
 The frontend is built once as static files from the pinned MPM source, then served by Nginx.
+The demo build uses a single worker and omits production source maps to reduce memory and download size.
 Its browser API URL is set during the build.
 After changing `MPM_BACKEND_PORT`, rebuild with `docker compose build frontend` before restarting it.
 Internal connections use `mqtt:1883`, `backend:8000`, `mysql:3306` and `redis:6379`.
@@ -67,7 +71,10 @@ Do not substitute browser localhost URLs for those container addresses.
 Open http://localhost:18081 for MPM, adjusting the port if configured differently.
 The initialized account is MPM's published local demo administrator; its email and password are defined in `external/micropowermanager/src/backend/app/Utils/DemoCompany.php` as `DEMO_COMPANY_ADMIN_EMAIL` and `DEMO_COMPANY_PASSWORD`.
 Use those values locally; do not include them in screenshots or presentation slides.
-Open the Libre Solar BMS plugin and confirm node `53494D0000000001` is labeled as simulated.
+Open the Libre Solar BMS plugin.
+If the setup dialog appears, choose Refresh, then Finish plugin setup after the readiness check succeeds.
+An empty list means provisioning is missing; an access error requires the correct account permissions.
+After closing setup, confirm node `53494D0000000001` is labeled as simulated.
 The adapter API key is never used for browser login.
 
 Open http://localhost:18123 for Home Assistant.

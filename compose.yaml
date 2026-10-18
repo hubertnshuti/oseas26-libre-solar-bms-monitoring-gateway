@@ -1,7 +1,7 @@
 name: ${COMPOSE_PROJECT_NAME:-libresolar-demo}
 
 x-backend: &backend
-  image: ${MPM_BACKEND_IMAGE:-libresolar-demo-backend:local}
+  image: ${MPM_BACKEND_IMAGE:-${COMPOSE_PROJECT_NAME:-libresolar-demo}-backend:local}
   build:
     context: ./external/micropowermanager
     dockerfile: docker/DockerfileBackendDev
@@ -119,7 +119,7 @@ services:
       retries: 12
 
   frontend:
-    image: libresolar-demo-frontend:local
+    image: ${MPM_FRONTEND_IMAGE:-${COMPOSE_PROJECT_NAME:-libresolar-demo}-frontend:local}
     build:
       context: ./external/micropowermanager
       dockerfile: ../../deploy/Dockerfile.frontend
@@ -167,7 +167,7 @@ services:
       retries: 12
 
   adapter:
-    image: libresolar-demo-gateway:local
+    image: ${GATEWAY_IMAGE:-${COMPOSE_PROJECT_NAME:-libresolar-demo}-gateway:local}
     build:
       context: .
       dockerfile: deploy/Dockerfile.gateway
@@ -192,7 +192,7 @@ services:
     mem_limit: 256m
 
   simulator:
-    image: libresolar-demo-gateway:local
+    image: ${GATEWAY_IMAGE:-${COMPOSE_PROJECT_NAME:-libresolar-demo}-gateway:local}
     command:
       - node
       - --import
