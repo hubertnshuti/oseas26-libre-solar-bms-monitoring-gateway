@@ -10,21 +10,23 @@ Sign in to MPM with an account whose company has the Libre Solar BMS plugin enab
 Open **Libre Solar BMS** to view the battery list at `/libre-solar-bms/overview`.
 Selecting a battery opens `/libre-solar-bms/batteries/{id}`, where `{id}` is the internal MPM battery ID.
 The frontend uses the existing user session; integration API keys are never browser settings.
-The initial plugin setup flow can also display the list and complete registration after a successful real API read.
+The initial plugin setup shows a compact readiness check instead of embedding the dashboard inside a dialog.
+Choose Refresh to check access and provisioning, then Finish plugin setup once at least one battery is available.
+Errors remain visible with a retry action; an empty or failed read cannot complete setup.
 
 ## Measurements and interpretation
 
-| Display                         | API source                           | Meaning                                                           |
-| ------------------------------- | ------------------------------------ | ----------------------------------------------------------------- |
-| Battery identity                | Battery label and `node_id`          | Provisioned asset and MQTT source                                 |
-| Data source                     | `source`                             | Explicit simulation or hardware marker                            |
-| State of charge                 | `summary.soc`                        | Reported percentage, not an estimate of state of health           |
-| State of health / cycle count   | `summary.soh`, `summary.cycle_count` | Unsupported by the demo profile; shown as unavailable             |
-| Cell imbalance                  | `summary.cell_voltage_delta`         | Difference between the highest and lowest configured cell voltage |
-| Maximum battery temperature     | `summary.cell_temperature_max`       | Highest configured battery-sensor reading                         |
-| Maximum electronics temperature | `summary.component_temperature_max`  | Highest supported electronics-sensor reading                      |
-| BMS state and faults            | State code, flags, decoded faults    | Last observed source state and fault assessment                   |
-| Observation time                | `summary.observed_at`                | When the displayed measurement was observed                       |
+| Display                         | API source                           | Meaning                                                                                         |
+| ------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| Battery identity                | Battery label and `node_id`          | Provisioned asset and MQTT source                                                               |
+| Data source                     | `source`                             | Explicit simulation or hardware marker                                                          |
+| State of charge                 | `summary.soc`                        | Reported percentage displayed to at most two decimal places, not an estimate of state of health |
+| State of health / cycle count   | `summary.soh`, `summary.cycle_count` | Unsupported by the demo profile; shown as unavailable                                           |
+| Cell imbalance                  | `summary.cell_voltage_delta`         | Difference between the highest and lowest configured cell voltage                               |
+| Maximum battery temperature     | `summary.cell_temperature_max`       | Highest configured battery-sensor reading                                                       |
+| Maximum electronics temperature | `summary.component_temperature_max`  | Highest supported electronics-sensor reading                                                    |
+| BMS state and faults            | State code, flags, decoded faults    | Last observed source state and fault assessment                                                 |
+| Observation time                | `summary.observed_at`                | When the displayed measurement was observed                                                     |
 
 Missing or unsupported measurements remain unavailable with their quality reason.
 A real zero keeps its value and unit.
@@ -40,9 +42,9 @@ Integration freshness describes how recently that check was performed.
 A recent integration check can report a stale or disconnected source.
 A delayed HTTP response cannot turn an old check into a fresh one.
 
-The detail view ages the original source check against the API-provided integration threshold, currently 150 seconds.
+The list and detail views independently age the original source check against the API-provided integration threshold, currently 150 seconds.
 Summary measurements normally arrive every 60 seconds; the adapter's 15-second source timeout is not a metric-row expiry rule.
-List rows currently lack the original check timestamp and threshold, so list assessments are qualified as valid at the last successful fetch.
+The list API includes `status_checked_at` and `integration_stale_after_seconds`, allowing the browser to expire a check without waiting for another successful request.
 When integration is stale, retained measurements are labelled last known.
 
 The current gateway adapter does not send source-status checks.

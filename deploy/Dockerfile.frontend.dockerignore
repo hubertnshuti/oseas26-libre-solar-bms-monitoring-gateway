@@ -1,0 +1,9 @@
+**
+!src/
+!src/frontend/
+!src/frontend/**
+src/frontend/node_modules/
+src/frontend/dist/
+src/frontend/coverage/
+src/frontend/.env*
+!src/frontend/.env.example

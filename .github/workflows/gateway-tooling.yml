@@ -2,9 +2,9 @@ name: Gateway checks
 
 on:
   pull_request:
-    branches: [team/bms-monitoring]
+    branches: [main, team/bms-monitoring]
   push:
-    branches: [team/bms-monitoring, feat/message-contract]
+    branches: [main, team/bms-monitoring, "fix/**"]
 
 permissions:
   contents: read

@@ -21,12 +21,18 @@ First installation downloads/builds images and initializes a private local demo 
 No host Node, npm, PHP or Composer installation is needed to run the demo.
 
 ```bash
-git clone --branch team/bms-monitoring --recurse-submodules https://github.com/hubertnshuti/oseas26-libre-solar-bms-monitoring-gateway.git gateway
+git clone --branch main --recurse-submodules https://github.com/hubertnshuti/oseas26-libre-solar-bms-monitoring-gateway.git gateway
 cd gateway
 bash deploy/demo.sh configure
 ```
 
-Review `.env` for an unused project name and ports, then follow the [first-installation guide](docs/quickstart.md).
+Review `.env` for an unused project name and ports, then install:
+
+```bash
+bash deploy/demo.sh install
+```
+
+Follow the [first-installation guide](docs/quickstart.md) for login, Home Assistant configuration and troubleshooting.
 After installation, the ordinary startup command is:
 
 ```bash
@@ -44,7 +50,9 @@ Saved configuration and history persist across `docker compose stop` and the sta
 
 ## Delivery status
 
-The MPM submodule pins published commit `ab3a466f90e25240ea83e9fdcdbcb36ef849a90f`, containing backend and battery screens.
+The MPM submodule pins the backend and battery screens to the revision recorded by this gateway commit.
+Run `git submodule status` to inspect that exact revision; the installer checks it before building.
+The battery screens provide a compact setup check, readable measurement precision and independently aging integration status.
 The simulator, MQTT contract, discovery publisher, adapter, backend and screens are implemented.
 The combined Compose workflow is undergoing verification; consult the [verification record](docs/evidence/delivery.md) for actual results.
 Code presence and unit tests alone do not establish a working full demonstration.
