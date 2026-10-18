@@ -33,6 +33,8 @@ Reviewed additive fields require matching schema/fixture changes before producer
 
 The [message contract](../message-contract.md) defines wire behavior and the [API contract](../api-contract.md) defines the backend boundary.
 Strict validation makes incompatible changes visible at ingestion.
-A durable producer outbox is implemented, but the current adapter still lacks durable HTTP retries, stored-event receipts, and source-status delivery.
+The producer outbox and adapter queue are durable.
+The adapter uses SQLite transactions before event receipts, retries transient HTTP failures, defers new-session metadata until a summary is accepted and persists source-status revisions.
+The bounded queue can reject new work at capacity; quarantined events remain available for reconciliation.
 Schema acceptance does not establish those runtime guarantees; see the [verification records](../evidence/README.md).
 Hardware mapping and protection behavior require validation against physical equipment before deployment.

@@ -1,157 +1,158 @@
 # MQTT-to-MPM adapter
 
-The adapter subscribes to configured battery nodes and delivers validated summaries,
-events and attributes to the v1 MPM API.
-Telemetry and availability are validated without HTTP writes.
-Verification includes both a limited MQTT protocol peer and an authenticated real
-Mosquitto broker, each with a fake HTTP endpoint.
-The simulator, real MPM plugin and battery screen have not been demonstrated together.
+The adapter validates the configured nodes' MQTT messages, stores pending work durably, and delivers summaries, events, metadata and source-status checks to MPM.
+Telemetry drives freshness checks; individual telemetry samples are not written to the MPM metrics API.
+For installation of the complete simulator demonstration, use the [quickstart](quickstart.md).
+For test scope and actual integration results, see the [delivery record](evidence/delivery.md).
 
-## Start and stop
+## Run against an existing backend
 
-Use Node from `.nvmrc` and run these commands from the gateway root.
-Prerequisites for runtime: an authenticated MQTT broker reachable from this machine,
-its username/password, an MPM backend with the Libre Solar plugin enabled, a company
-API key, and batteries provisioned for the allowed node IDs.
-The pinned MPM submodule includes the plugin and provisioning command.
-Follow [the quickstart](quickstart.md) for the combined demo, or provision an existing backend through its documented administrative command.
+Use the Node version in `.nvmrc` (Node 24, including its built-in SQLite module).
+Provision the battery and adapter identity in MPM before starting.
+Supply a company API key and authenticated MQTT credentials:
 
 ```bash
 nvm use
 npm ci
 cp deploy/mpm-ingest.env.example .env.mpm-ingest
-```
-
-Expected: locked dependencies are installed and an ignored local settings file exists.
-If installation fails, check Node and the registry connection before starting.
-Edit `.env.mpm-ingest`, replacing the broker credentials and company API key with
-values supplied by the broker/backend owners; the placeholders are not working credentials.
-Then run:
-
-```bash
+# Edit the ignored file with the actual local credentials and bindings.
 npm run dev:mpm-ingest
 ```
 
-Expected: a JSON `subscribed` log identifies the configured adapter, company label
-and node IDs after the broker grants subscriptions.
-The runtime subscribes only to those nodes' `summary`, `events`, `attributes`,
-`availability` and `telemetry` topics.
-There is no producer `status` subscription and no receipt publication.
-A delivered fixture produces `accepted`, `duplicate` or `ignored_stale` with its
-node/message IDs; an HTTP response must match the original message ID.
-Stop with Ctrl+C; the adapter stops accepting messages, disconnects from MQTT and
-waits for already accepted HTTP work to finish or time out.
-There are no files or volumes to delete for this slice.
-Pending work exists only in memory and is lost on a crash.
+A `subscribed` log confirms the broker granted the five subscriptions: `summary`, `events`, `attributes`, `availability` and `telemetry` for each allowed node.
+The adapter publishes event receipts to `libresolar/bms/v1/{node_id}/receipts/mpm` with QoS 1, without retention.
+Broker ACLs must allow those subscriptions and receipt publication.
+It does not subscribe to producer-supplied `status`; source checks belong to the adapter.
 
-## Settings
+Stop with Ctrl+C.
+Shutdown stops incoming work, waits for the active HTTP attempt to finish or time out, and preserves pending work for the next start.
+A failed durable write stops the process with a nonzero exit code and a `storage_failed` log.
 
-| Setting                          | Meaning                                                                                               |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `MQTT_URL`                       | Broker origin using `mqtt://` or `mqtts://`; no embedded credentials, path, query or fragment         |
-| `MQTT_USERNAME`, `MQTT_PASSWORD` | Required broker credentials; use broker ACLs matching this node allowlist                             |
-| `MPM_BASE_URL`                   | Backend server origin using HTTP or HTTPS; omit `/api` and embedded credentials                       |
-| `MPM_API_KEY`                    | Required company Bearer key, obtained from the backend owner/provisioning workflow                    |
-| `MPM_COMPANY_BINDING`            | Required local label, 1–64 lowercase letters/digits/underscore/hyphen; never sent as tenant authority |
-| `BMS_ADAPTER_ID`                 | Required identity in the same format; use one running instance per identity                           |
-| `BMS_NODE_IDS`                   | Required comma-separated unique uppercase 16-digit hexadecimal IDs; maximum 100                       |
-| `MPM_HTTP_TIMEOUT_MS`            | Request/response timeout; default 10000, range 1–60000 milliseconds                                   |
-| `MQTT_RECONNECT_MS`              | Broker reconnect delay; default 1000, range 1–60000 milliseconds                                      |
-| `BMS_MAX_PENDING_MESSAGES`       | Maximum in-memory HTTP work including the active request; default 100, range 1–10000                  |
+## Configuration
 
-The HTTP client does not follow redirects, so a company key cannot be forwarded
-to another server by a redirect.
-Logs contain setting names, IDs and controlled outcome codes, without credentials,
-raw payloads, URLs or server error bodies.
-Use loopback HTTP only for local development; use verified TLS for remote deployment.
-Inside containers, use reachable service names rather than the host's loopback address.
+| Setting                          | Meaning                                                                                                                            |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `MQTT_URL`                       | Required `mqtt://` or `mqtts://` server origin without embedded credentials or paths.                                              |
+| `MQTT_USERNAME`, `MQTT_PASSWORD` | Required broker credentials.                                                                                                       |
+| `MPM_BASE_URL`                   | Required HTTP(S) server origin; omit `/api`.                                                                                       |
+| `MPM_API_KEY`                    | Required company Bearer key from the provisioning workflow.                                                                        |
+| `MPM_COMPANY_BINDING`            | Required stable local company label; not sent as tenant authority.                                                                 |
+| `BMS_ADAPTER_ID`                 | Required provisioned identity; run one adapter instance per identity.                                                              |
+| `BMS_NODE_IDS`                   | Required comma-separated uppercase 16-digit hexadecimal node IDs; maximum 100.                                                     |
+| `BMS_SOURCE`                     | `simulator` (default) or `hardware`; must match the provisioned nodes. Selecting hardware does not implement a physical transport. |
+| `BMS_STATE_PATH`                 | SQLite state file; defaults to `.local/mpm-ingest.sqlite`. Compose uses `/data/adapter.sqlite` on `adapter_data`.                  |
+| `MPM_HTTP_TIMEOUT_MS`            | HTTP timeout, default 10000 ms; maximum 60000.                                                                                     |
+| `MQTT_RECONNECT_MS`              | Broker reconnect delay, default 1000 ms; maximum 60000.                                                                            |
+| `BMS_MAX_PENDING_MESSAGES`       | Pending plus quarantined records, default 100; maximum 10000. The completed-event receipt cache is bounded by the same count.      |
 
-## Delivery and limitations
+The state file is bound to the company label, endpoint, source, adapter ID and node allowlist.
+Changing that binding requires deliberate reconciliation; startup refuses to reuse another binding's file.
+Credential rotation does not change the binding.
+Use a persistent local filesystem for the SQLite database and its WAL files, with one state directory per adapter.
+Do not delete or recreate `adapter_data` to resolve an error: it contains acknowledged events awaiting delivery and the status revision watermark.
+Back up the volume with the adapter stopped, preserving the database and any journal files together.
 
-Messages pass the shared schema/semantic validator and topic-node check before delivery.
-Wrong-node, oversized and malformed inputs are rejected before HTTP.
-Once MPM accepts attributes, those capabilities also constrain subsequent validation.
-The company key selects the MPM tenant; this adapter never supplies a `company_id`.
-Messages retain their source marker, observation/publication times, sequence and IDs.
-MPM remains responsible for duplicate effects and ordering across sessions.
+## Delivery guarantees and limits
 
-HTTP writes are serialized and pending work is bounded.
-At capacity, `capacity_exceeded` is visible; the message is not saved.
-Successful HTTP outcomes require status 200, a JSON response, a recognized result
-and the matching message ID; `ignored_stale` is not accepted for fault events.
-Responses are bounded to 32 KiB.
-Authentication/authorization/media-type failures pause all HTTP delivery until restart
-after correcting the configuration.
-Other permanent failures produce `quarantine_required`; this is a log outcome,
-not a persisted quarantine archive.
-Network, rate-limit and server failures produce `delivery_failed`.
+Messages pass the shared schema, semantic and topic-node checks before entering the queue.
+The configured source is also checked.
+Validated attributes are saved as per-session capabilities before HTTP delivery, so a lost metadata response cannot disable profile validation after restart.
+Older metadata cannot replace a higher-sequence profile in the same session or affect another session.
+MPM selects its tenant from the API key; the adapter never sends a `company_id`.
+Payloads retain their original message ID, sequence, observation time and first publication time on every retry.
 
-Automatic retries, durable queues, summary coalescing, application receipts,
-status revisions and freshness heartbeats are later reliability work.
-The adapter does not publish `stored` event receipts and does not claim reliable
-fault recovery after an outage or restart.
-Do not use this slice as the only copy of a fault log.
-The producer must retain unacknowledged events for the later receipt exchange.
-No source-freshness label is inferred from retained summaries or availability.
+SQLite transactions use WAL mode and full synchronization.
+Every proposed state mutation is validated before commit; invalid mutations roll back without poisoning the next restart.
+A `stored` event receipt means the adapter committed responsibility for delivery, **not** that MPM accepted the event.
+The producer may then remove the event from its outbox.
+Identical producer replays receive the same receipt, including after adapter restart or a lost receipt.
+Different content with the same pending/cached ID is rejected as an identity conflict.
+MPM remains the long-term duplicate authority; eviction from the bounded completed-event cache is safe because a later replay is stored and delivered again with its original identity.
 
-## Verify and troubleshoot
+HTTP writes are serialized.
+A validated 200 response must contain the original message ID and `accepted`, `duplicate` or, for current-state messages, `ignored_stale`.
+Malformed responses and lost connections are retried.
+Transient failures use exponential backoff with jitter, bounded at 30 seconds; valid `Retry-After` values extend the delay, capped at one hour.
+Authentication, authorization and content-type failures pause HTTP delivery until configuration is corrected and the adapter restarts.
+Permanent errors retain the original record in quarantine for operator reconciliation.
+Quarantined events are never silently discarded.
 
-With dependencies installed, run from the gateway root:
+New-session attributes wait until the backend accepts or recognizes a summary from that session.
+This avoids using metadata to promote a session, which the backend intentionally forbids.
+An unpromotable session's metadata remains pending; its summary conflict is visible for investigation.
+Unattempted snapshots may be replaced by a newer snapshot from the same node and session.
+Fault events are not coalesced.
+At capacity, new records are rejected visibly and events receive no stored receipt, so the producer retains responsibility.
+Fix the delivery problem before increasing the capacity.
+
+## Source and integration freshness
+
+Only a genuinely newer, valid, non-retained telemetry observation can establish freshness.
+Retained summaries and an `online` availability message cannot establish it.
+Future-dated telemetry cannot establish freshness until its observation time is reached.
+Backward clock adjustments pause new status checks until the last durable check time is reached again.
+The observation watermark survives restarts; replaying the last telemetry sample does not make a restarted adapter fresh.
+Source checks start at `unknown`, become `fresh` after a new observation, and become `stale` after 15 seconds of silence.
+Explicit source `offline` availability produces `disconnected`; loss of the adapter's broker connection produces `unknown`, because the source's connection cannot then be assessed.
+Checks are sent on transitions and every 60 seconds.
+
+Each check has a durable increasing status revision and an original check timestamp.
+Retries preserve both.
+MPM and the browser independently age the accepted check against the 150-second integration threshold.
+A delayed check cannot imply that the integration is currently healthy.
+Last-known summary values remain visible with their own observation times.
+
+## Operations and troubleshooting
+
+Logs expose controlled outcome codes and message/node IDs, not credentials, raw payloads or response bodies.
+HTTP redirects are refused so a company key cannot be forwarded to another server.
+Use loopback HTTP for the local demonstration and verified TLS for remote deployment.
+
+| Log or symptom                                          | Action                                                                                                                                     |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `startup_failed`                                        | Check required settings, state-directory permissions, database integrity and binding. Preserve the database before investigating.          |
+| `mqtt_error` / `mqtt_offline`                           | Check broker reachability, credentials and TLS. Reconnection is automatic.                                                                 |
+| `subscription_failed`                                   | Correct broker ACLs and restart.                                                                                                           |
+| `invalid_payload` / `unbound_topic` / `source_mismatch` | Compare producer data, topic, reviewed profile and configured binding.                                                                     |
+| `configuration_error`                                   | Correct the API key, plugin enablement or adapter authorization, then restart. Pending records remain stored.                              |
+| `quarantine_required`                                   | Reconcile provisioning or identity conflicts with the backend owner; preserve the state file. No automatic quarantine replay is performed. |
+| `delivery_failed`                                       | Restore backend reachability. The adapter retries automatically.                                                                           |
+| `capacity_exceeded` / `status_capacity_exceeded`        | Resolve blocked delivery or quarantine before raising the bounded capacity.                                                                |
+| `clock_regression`                                      | Correct the host clock; checks resume once time reaches the last persisted check. Do not reset the revision counter.                       |
+| `storage_failed`                                        | Restore writable storage/free space and restart. Never substitute an empty state file.                                                     |
+| `receipt_publish_failed`                                | Check the receipt ACL and broker connection. The producer retries until it receives the receipt.                                           |
+
+There is no automatic database retention policy in MPM: its event/receipt history preserves replay identity and must be included in capacity planning.
+The local Compose credentials and shared broker account are for a loopback demonstration; production identity separation and retention policy require deployment-specific review.
+
+## Verification
 
 ```bash
 npm run typecheck
 npm run format:check
 npm test
-```
-
-Expected: all checks pass.
-Adapter tests open ephemeral loopback HTTP/TCP ports; the runtime test starts
-the real executable against a limited MQTT peer and fake MPM server.
-These test substitutes do not prove broker ACLs, retained messages, real tenant
-isolation, actual MPM storage or screen behavior.
-If a restricted runner rejects socket access with `EPERM`, rerun in an environment
-that permits loopback servers; do not disable the tests.
-See [adapter verification](evidence/adapter-baseline.md).
-
-| Log or symptom                      | Next action                                                                                                                          |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Missing `.env.mpm-ingest`           | Copy the example to the gateway root and fill in actual local values                                                                 |
-| `startup_failed`                    | Correct the named setting; do not paste secret values into support logs                                                              |
-| `mqtt_error` / `mqtt_offline`       | Check broker reachability, credentials and TLS; reconnect is automatic                                                               |
-| `subscription_failed`               | Check broker ACLs for all five suffixes and restart                                                                                  |
-| `invalid_payload` / `unbound_topic` | Check v1 fixtures, topic/payload identity and configured node IDs                                                                    |
-| `configuration_error` / `paused`    | Correct the company key, plugin permission or API configuration, then restart                                                        |
-| `quarantine_required`               | Check provisioning, payload validity or conflict with the backend owner; preserve the producer's original message for reconciliation |
-| `delivery_failed`                   | Restore endpoint access and arrange replay from the producer; this slice does not retry automatically                                |
-| `capacity_exceeded`                 | Slow the producer or fix the endpoint; increasing the cap does not add durability                                                    |
-
-For actual integration verification, run the [combined demo](quickstart.md), publish a simulator summary, and compare its source, node, observation time, and SoC with the signed-in MPM response.
-Record both repository revisions and the original message ID.
-The [delivery record](evidence/delivery.md) distinguishes actual storage from fake-server checks.
-
-## Real Mosquitto verification
-
-With Docker Desktop running and dependencies installed, run from the gateway root:
-
-```bash
 npm run test:mpm-ingest:broker
 ```
 
-Expected: `result: passed`, eight named checks and exactly two HTTP writes.
-The script starts an isolated Mosquitto 2.1.2 container pinned by image digest,
-with temporary test-only credentials and a node-scoped adapter read rule.
-It starts a fake MPM HTTP server and the actual adapter executable using an env file.
-It verifies wrong-password rejection, a retained summary without timestamp rewriting,
-20 telemetry packets without HTTP writes, malformed/type-invalid summaries,
-an unbound topic, broker restart/reconnect/resubscription, post-restart summary
-delivery and clean shutdown without credential logs.
-The HTTP endpoint remains a test substitute: this does not prove real MPM storage
-or company isolation.
+Unit/integration tests cover queue restart, unchanged replay after a lost response, metadata ordering, quarantine, configuration pauses, capacity, corrupt state, status timing and persisted watermarks.
+The broker harness uses real Mosquitto and the actual adapter executable with a fake HTTP endpoint.
+It checks credentials, retained data, invalid messages, reconnects, receipts, process-kill recovery, duplicate receipts and connected-but-silent source checks.
+It creates and removes only its own temporary container and state directory.
+These checks do not by themselves prove real MPM persistence, tenant isolation or browser behavior; those results are recorded separately in the [delivery evidence](evidence/delivery.md).
 
-The test uses a fixed loopback port selected from an available local port.
-An unspecified Docker host port can change on container restart, so the script
-also asserts that the published address remains unchanged during the check.
-It automatically stops/removes only its own temporary container and removes its
-own temporary settings, without deleting any existing volumes or services.
-If Docker socket access is denied, run in an environment with authorized Docker
-access; if a check fails, inspect the reported assertion before repeating it.
+## Real MPM recovery check
+
+Use the pinned MPM backend source, PHP 8.5, locked Composer dependencies and its `.env.testing` configured for `mpm_testing` at `127.0.0.1:53306`.
+Prepare its normal isolated test schema using the backend's documented battery test command first.
+Docker must be running for the temporary authenticated Mosquitto broker.
+The harness refuses other database names, hosts or ports before creating any test data.
+
+```bash
+npm run test:mpm-ingest:recovery
+```
+
+If using a separate backend development checkout, set `BMS_TEST_BACKEND` to its `src/backend` directory.
+The check creates its own tenant database and test API key, exercises the real MPM HTTP kernel, loses a response after a backend commit, and verifies a single event/receipt after adapter restart and replay.
+It also checks new-session metadata recovery and live-to-stale source checks.
+The temporary PHP server, broker, tenant database and key are removed afterward.
+It does not initialize or reset the demonstration database.

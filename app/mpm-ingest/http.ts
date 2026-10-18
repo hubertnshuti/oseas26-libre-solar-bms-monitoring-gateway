@@ -2,11 +2,12 @@ import type {
   Attributes,
   FaultEvent,
   Summary,
+  SourceStatus,
 } from "../../lib/contract/index.js";
 import type { AdapterConfig } from "./config.js";
 
-export type DeliveryKind = "summary" | "event" | "attributes";
-export type DeliveryPayload = Summary | FaultEvent | Attributes;
+export type DeliveryKind = "summary" | "event" | "attributes" | "status";
+export type DeliveryPayload = Summary | FaultEvent | Attributes | SourceStatus;
 export type DeliveryOutcome = {
   result:
     | "accepted"
@@ -17,11 +18,13 @@ export type DeliveryOutcome = {
     | "delivery_failed";
   code?: string;
   httpStatus?: number;
+  retryAfterMs?: number;
 };
 const routes: Record<DeliveryKind, string> = {
   summary: "summaries",
   event: "events",
   attributes: "attributes",
+  status: "status",
 };
 
 export class MpmClient {
@@ -58,8 +61,18 @@ export class MpmClient {
           : [404, 409, 413, 422].includes(response.status)
             ? "quarantine_required"
             : "delivery_failed";
+        const retryAfter = response.headers.get("retry-after");
+        const delay =
+          retryAfter === null
+            ? NaN
+            : /^\d+$/.test(retryAfter)
+              ? Number(retryAfter) * 1000
+              : Date.parse(retryAfter) - Date.now();
         return {
           result,
+          ...(Number.isFinite(delay) && delay >= 0
+            ? { retryAfterMs: Math.min(delay, 3600000) }
+            : {}),
           httpStatus: response.status,
           code: `http_${response.status}`,
         };

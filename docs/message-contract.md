@@ -2,7 +2,8 @@
 
 The gateway implements the JSON schemas, semantic validator, simulator, and publisher for this versioned interface.
 The pinned MPM submodule implements the ingestion/read API.
-Adapter durable retries, stored-event receipts, and source-status delivery remain incomplete; the contract defines their required semantics.
+The adapter implements durable retries, stored-event receipts and source-status checks as described in [the adapter guide](mpm-ingest.md).
+The [verification record](evidence/delivery.md) distinguishes automated checks from actual deployment evidence.
 
 ## Files and validation
 
@@ -75,7 +76,7 @@ integration stale after **150 seconds** without a recent trustworthy check.
 A healthy source can have a 42-second-old displayed summary. The UI must show
 measurement age separately rather than expiring the metric row at 15 seconds.
 Freshness uses a local monotonic clock; observation/check timestamps use UTC.
-Timing engines and injected-clock freshness tests belong to the adapter work.
+The adapter implements these timers with controlled-clock regression tests.
 
 ## Identity, order and clocks
 
@@ -168,8 +169,8 @@ not generate one event per telemetry packet. Event IDs and content are stable
 across retries. A receipt with `status: stored` means the configured adapter
 has committed the event to its durable queue. It does not mean MPM has accepted
 it. Producers validate node/event/source/consumer identity before retiring their
-durable outbox item. The producer outbox is implemented; actual adapter queue
-persistence and receipt publication remain incomplete.
+durable outbox item. Both the producer outbox and adapter queue are persistent.
+The adapter commits an event before publishing its stored receipt.
 
 ## Demo profile and review
 

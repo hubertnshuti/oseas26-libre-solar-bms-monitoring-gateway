@@ -23,7 +23,23 @@ const telemetry = await readFile(
 );
 const directory = await mkdtemp(join(tmpdir(), "bms-a03-broker-"));
 const name = `bms-a03-verification-${process.pid}`;
+const backendOrigin = process.env.BMS_TEST_MPM_ORIGIN;
+const backendKey = backendOrigin
+  ? JSON.parse(await readFile(process.env.BMS_TEST_MPM_STATE, "utf8")).token
+  : "local-http-test-key";
+const adapterId = backendOrigin ? "mpm-recovery" : "broker-verification";
+let dropEventResponse = Boolean(backendOrigin);
+let droppedResponses = 0;
 const requests = [];
+const receipts = [];
+let responseStatus = 200;
+const event = JSON.parse(
+  await readFile(new URL("valid/fault.event.json", fixtures), "utf8"),
+);
+const summaries = () =>
+  requests.filter((entry) => entry.route.endsWith("/summaries"));
+const events = () =>
+  requests.filter((entry) => entry.route.endsWith("/events"));
 const logs = [];
 let stderr = "";
 let child;
@@ -38,7 +54,7 @@ async function docker(...args) {
   return stdout.trim();
 }
 async function until(predicate, description) {
-  const deadline = Date.now() + 15000;
+  const deadline = Date.now() + 30000;
   while (Date.now() < deadline) {
     if (predicate()) return;
     await delay(50);
@@ -54,7 +70,40 @@ const http = createServer(async (request, response) => {
     authorization: request.headers.authorization,
     body,
   });
-  response.writeHead(200, { "Content-Type": "application/json" });
+  if (backendOrigin && responseStatus === 200) {
+    try {
+      const upstream = await fetch(`${backendOrigin}${request.url}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${backendKey}`,
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(10000),
+      });
+      const reply = await upstream.text();
+      if (
+        request.url.endsWith("/events") &&
+        dropEventResponse &&
+        upstream.status === 200
+      ) {
+        dropEventResponse = false;
+        droppedResponses++;
+        response.destroy();
+        return;
+      }
+      response.writeHead(upstream.status, {
+        "Content-Type": "application/json",
+      });
+      response.end(reply);
+    } catch {
+      response.writeHead(503);
+      response.end();
+    }
+    return;
+  }
+  response.writeHead(responseStatus, { "Content-Type": "application/json" });
   response.end(
     JSON.stringify({ result: "accepted", message_id: body.message_id }),
   );
@@ -68,7 +117,7 @@ try {
   );
   await writeFile(
     join(directory, "acl"),
-    `user adapter\ntopic read libresolar/bms/v1/${node}/+\nuser publisher\ntopic readwrite libresolar/bms/v1/+/+\n`,
+    `user adapter\ntopic read libresolar/bms/v1/${node}/+\ntopic write libresolar/bms/v1/${node}/receipts/mpm\nuser publisher\ntopic readwrite libresolar/bms/v1/+/+\ntopic read libresolar/bms/v1/${node}/receipts/mpm\n`,
   );
   await writeFile(
     join(directory, "mosquitto.conf"),
@@ -146,45 +195,63 @@ try {
       "MQTT_USERNAME=adapter",
       "MQTT_PASSWORD=local-broker-test",
       `MPM_BASE_URL=http://127.0.0.1:${address.port}`,
-      "MPM_API_KEY=local-http-test-key",
+      `MPM_API_KEY=${backendKey}`,
       "MPM_COMPANY_BINDING=demo-company",
-      "BMS_ADAPTER_ID=broker-verification",
+      `BMS_ADAPTER_ID=${adapterId}`,
       `BMS_NODE_IDS=${node}`,
+      `BMS_STATE_PATH=${join(directory, "adapter.sqlite")}`,
       "MQTT_RECONNECT_MS=500",
     ].join("\n"),
     { mode: 0o600 },
   );
-  child = spawn(
-    process.execPath,
-    [
-      new URL("../node_modules/tsx/dist/cli.mjs", import.meta.url).pathname,
-      `--env-file=${join(directory, "adapter.env")}`,
-      "app/mpm-ingest/main.ts",
-    ],
-    { cwd: new URL("../", import.meta.url), stdio: ["ignore", "pipe", "pipe"] },
-  );
-  let pending = "";
-  child.stdout.on("data", (chunk) => {
-    pending += chunk.toString();
-    const lines = pending.split("\n");
-    pending = lines.pop();
-    for (const line of lines) if (line) logs.push(JSON.parse(line));
+  await publisher.subscribeAsync(topic("receipts/mpm"), { qos: 1 });
+  publisher.on("message", (receivedTopic, raw) => {
+    if (receivedTopic === topic("receipts/mpm"))
+      receipts.push(JSON.parse(raw.toString()));
   });
-  child.stderr.on("data", (chunk) => {
-    stderr += chunk.toString();
-  });
+  function startAdapter() {
+    child = spawn(
+      process.execPath,
+      [
+        `--env-file=${join(directory, "adapter.env")}`,
+        "--import",
+        "tsx",
+        "app/mpm-ingest/main.ts",
+      ],
+      {
+        cwd: new URL("../", import.meta.url),
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
+    let pending = "";
+    child.stdout.on("data", (chunk) => {
+      pending += chunk.toString();
+      const lines = pending.split("\n");
+      pending = lines.pop();
+      for (const line of lines) if (line) logs.push(JSON.parse(line));
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+  }
+  startAdapter();
   await until(
-    () => logs.some((entry) => entry.result === "accepted"),
+    () =>
+      logs.some(
+        (entry) =>
+          ["accepted", "duplicate"].includes(entry.result) &&
+          entry.messageId === summary.message_id,
+      ),
     "retained summary delivery",
   );
-  assert.deepEqual(requests, [
+  assert.deepEqual(summaries(), [
     {
       route: "/api/libre-solar-bms/ingest/summaries",
-      authorization: "Bearer local-http-test-key",
+      authorization: `Bearer ${backendKey}`,
       body: summary,
     },
   ]);
-  const delivered = requests.length;
+  const delivered = summaries().length;
   for (let count = 0; count < 20; count++)
     await publisher.publishAsync(topic("telemetry"), telemetry, { qos: 0 });
   await publisher.publishAsync(topic("summary"), "{", { qos: 1 });
@@ -203,7 +270,12 @@ try {
     "invalid message rejection",
   );
   await delay(300);
-  assert.equal(requests.length, delivered);
+  assert.equal(summaries().length, delivered);
+  assert(
+    requests
+      .filter((entry) => entry.route.endsWith("/status"))
+      .every((entry) => entry.body.source_status === "unknown"),
+  );
   const subscriptions = logs.filter(
     (entry) => entry.result === "subscribed",
   ).length;
@@ -225,33 +297,155 @@ try {
   });
   await until(
     () =>
-      requests.length === delivered + 1 &&
-      logs.filter((entry) => entry.result === "accepted").length ===
+      summaries().length === delivered + 1 &&
+      logs.filter(
+        (entry) =>
+          ["accepted", "duplicate"].includes(entry.result) &&
+          entry.messageId === summary.message_id,
+      ).length ===
         delivered + 1,
     "summary delivery after restart",
   );
-  assert.deepEqual(requests[delivered].body, summary);
+  assert.deepEqual(summaries()[delivered].body, summary);
+  responseStatus = 503;
+  await publisher.publishAsync(topic("events"), JSON.stringify(event), {
+    qos: 1,
+  });
+  await until(
+    () => receipts.length === 1 && events().length > 0,
+    "durable receipt during HTTP outage",
+  );
+  assert.equal(receipts[0].event_id, event.event_id);
+  assert.equal(receipts[0].consumer_id, adapterId);
+  const crashed = once(child, "close");
+  child.kill("SIGKILL");
+  await crashed;
+  responseStatus = 200;
+  startAdapter();
+  await until(
+    () =>
+      logs.some(
+        (entry) =>
+          ["accepted", "duplicate"].includes(entry.result) &&
+          entry.messageId === event.message_id,
+      ),
+    "restart recovery of queued event",
+  );
+  assert(
+    events().every(
+      (entry) => JSON.stringify(entry.body) === JSON.stringify(event),
+    ),
+  );
+  await publisher.publishAsync(topic("events"), JSON.stringify(event), {
+    qos: 1,
+  });
+  await until(() => receipts.length === 2, "duplicate receipt after recovery");
+  assert.deepEqual(receipts[1], receipts[0]);
+  const sessionId = "35f75ec4-29ab-48ab-93be-81d3e0708a68";
+  const attributes = JSON.parse(
+    await readFile(new URL("valid/demo.attributes.json", fixtures), "utf8"),
+  );
+  const observedAt = new Date().toISOString();
+  Object.assign(attributes, {
+    session_id: sessionId,
+    message_id: `${node}:${sessionId}:attributes:0`,
+    observed_at: observedAt,
+    published_at: observedAt,
+  });
+  const metadataBefore = requests.filter((entry) =>
+    entry.route.endsWith("/attributes"),
+  ).length;
+  await publisher.publishAsync(
+    topic("attributes"),
+    JSON.stringify(attributes),
+    { qos: 1, retain: true },
+  );
+  await until(
+    () =>
+      logs.some(
+        (entry) =>
+          entry.result === "queued" &&
+          entry.messageId === attributes.message_id,
+      ),
+    "new-session metadata stored",
+  );
+  await delay(300);
+  assert.equal(
+    requests.filter((entry) => entry.route.endsWith("/attributes")).length,
+    metadataBefore,
+  );
+  const promoted = {
+    ...summary,
+    session_id: sessionId,
+    message_id: `${node}:${sessionId}:summary:121`,
+    telemetry_message_id: `${node}:${sessionId}:telemetry:120`,
+    observed_at: observedAt,
+    published_at: observedAt,
+    last_source_observed_at: observedAt,
+  };
+  await publisher.publishAsync(topic("summary"), JSON.stringify(promoted), {
+    qos: 1,
+    retain: true,
+  });
+  await until(
+    () =>
+      logs.some(
+        (entry) =>
+          entry.result === "accepted" &&
+          entry.messageId === attributes.message_id,
+      ),
+    "metadata after summary session promotion",
+  );
+  const live = {
+    ...JSON.parse(telemetry.toString()),
+    session_id: sessionId,
+    message_id: `${node}:${sessionId}:telemetry:120`,
+    observed_at: new Date().toISOString(),
+    published_at: new Date().toISOString(),
+  };
+  await publisher.publishAsync(topic("telemetry"), JSON.stringify(live), {
+    qos: 0,
+  });
+  await until(
+    () => requests.some((entry) => entry.body.source_status === "fresh"),
+    "live telemetry status",
+  );
+  await until(
+    () => requests.some((entry) => entry.body.source_status === "stale"),
+    "connected but silent status",
+  );
   const closed = once(child, "close");
   child.kill("SIGTERM");
   assert.equal((await closed)[0], 0);
   assert(logs.some((entry) => entry.result === "stopped"));
   const output = JSON.stringify(logs) + stderr;
   assert(!output.includes("local-broker-test"));
-  assert(!output.includes("local-http-test-key"));
+  assert(!output.includes(backendKey));
   console.log(
     JSON.stringify(
       {
         result: "passed",
         image,
-        endpoint: "fake MPM HTTP server",
+        endpoint: backendOrigin
+          ? "real MPM HTTP kernel with isolated testing database"
+          : "fake MPM HTTP server",
+        droppedResponses,
         checks: [
           "broker rejects wrong credentials",
           "retained summary preserves payload/timestamps",
-          "20 telemetry packets produce no HTTP writes",
+          "historical telemetry never establishes freshness or writes metrics",
           "malformed/type-invalid summaries rejected",
           "unbound topic excluded",
           "broker restart/reconnect/resubscription",
           "summary delivered after restart",
+          "durable event receipt while HTTP unavailable",
+          "SIGKILL/restart recovers original event identity and times",
+          "identical receipt for duplicate event after recovery",
+          "new-session metadata waits for summary promotion",
+          ...(backendOrigin
+            ? ["backend commit followed by lost response replays safely"]
+            : []),
+          "new telemetry establishes fresh status and silence becomes stale",
           "clean shutdown and no secret logs",
         ],
         httpWrites: requests.length,

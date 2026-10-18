@@ -47,9 +47,10 @@ Summary measurements normally arrive every 60 seconds; the adapter's 15-second s
 The list API includes `status_checked_at` and `integration_stale_after_seconds`, allowing the browser to expire a check without waiting for another successful request.
 When integration is stale, retained measurements are labelled last known.
 
-The current gateway adapter does not send source-status checks.
-Consequently, an installation can receive new summaries while the screen reports unavailable source status and no recent integration update.
-See [adapter limitations](mpm-ingest.md#delivery-and-limitations).
+The adapter sends independent source checks on transitions and every 60 seconds.
+After adapter restart, source status starts unknown until a genuinely new telemetry observation arrives.
+A recent check can report stale or disconnected source; missing or delayed checks become stale integration after 150 seconds.
+See [adapter operations](mpm-ingest.md#source-and-integration-freshness).
 
 ## Fault history and refresh
 

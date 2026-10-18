@@ -10,6 +10,8 @@ export interface AdapterConfig {
   httpTimeoutMs: number;
   mqttReconnectMs: number;
   maxPendingMessages: number;
+  statePath: string;
+  source: "simulator" | "hardware";
 }
 
 export function readConfig(env: NodeJS.ProcessEnv): AdapterConfig {
@@ -70,7 +72,14 @@ export function readConfig(env: NodeJS.ProcessEnv): AdapterConfig {
   const mqttPassword = required("MQTT_PASSWORD");
   const mpmApiKey = required("MPM_API_KEY");
   if (/[\r\n]/.test(mpmApiKey)) throw new Error("Invalid MPM_API_KEY");
+  const source = env.BMS_SOURCE ?? "simulator";
+  if (source !== "simulator" && source !== "hardware")
+    throw new Error("Invalid BMS_SOURCE");
+  const statePath = env.BMS_STATE_PATH ?? ".local/mpm-ingest.sqlite";
+  if (!statePath.trim()) throw new Error("Invalid BMS_STATE_PATH");
   return {
+    source,
+    statePath,
     mqttUrl: url("MQTT_URL", ["mqtt:", "mqtts:"]),
     mqttUsername,
     mqttPassword,

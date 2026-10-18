@@ -180,7 +180,10 @@ services:
       MPM_COMPANY_BINDING: demo-company
       BMS_ADAPTER_ID: ${BMS_ADAPTER_ID:-mpm-demo}
       BMS_NODE_IDS: ${BMS_NODE_ID:-53494D0000000001}
+      BMS_SOURCE: simulator
+      BMS_STATE_PATH: /data/adapter.sqlite
     volumes:
+      - adapter_data:/data
       - type: bind
         source: ./.demo/adapter.key
         target: /run/secrets/adapter.key
@@ -247,5 +250,6 @@ volumes:
   redis_data:
   broker_config:
   mqtt_data:
+  adapter_data:
   simulator_data:
   homeassistant_data:

@@ -107,26 +107,28 @@ docker compose logs --tail=30 adapter simulator
 docker compose stop
 ```
 
-Stop preserves database, MQTT retained messages, simulator outbox and Home Assistant data.
+Stop preserves the database, MQTT retained messages, simulator outbox, adapter SQLite queue and Home Assistant data.
+Keep `adapter_data` when updating: it owns events already acknowledged to the producer and persists status revisions.
 The same startup command resumes them.
 Do not use volume deletion as a routine troubleshooting step.
 Do not change the project name to resume an existing installation: a new name selects different data.
 
 ## Troubleshooting
 
-| Symptom                                                                 | Check and action                                                                                                                    |
-| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Docker unavailable in WSL                                               | Open Docker Desktop and enable integration for the active distro.                                                                   |
-| Port already allocated                                                  | Identify its owner with `docker ps`; choose an unused port rather than stopping unrelated services.                                 |
-| Build or initialization fails                                           | Inspect the last failing command; do not continue to the next stage or reset data.                                                  |
-| Service exits                                                           | Run `docker compose ps -a` and `docker compose logs --tail=80 SERVICE`.                                                             |
-| Missing adapter key                                                     | Complete the explicit initialization/provisioning step; never put the key in frontend configuration.                                |
-| Adapter `configuration_error` or `paused`                               | Check company key, enabled plugin, node and adapter binding; restart only after correcting configuration.                           |
-| Adapter rejects initial attributes with HTTP409 after simulator restart | The new session metadata precedes its promoting summary; summaries still update, but metadata recovery is incomplete.               |
-| MPM reports stale integration                                           | Current adapter does not send status heartbeats; check observation time and delivery logs separately.                               |
-| HA has no battery                                                       | Confirm MQTT integration is connected to `mqtt:1883`; inspect simulator logs and restart only the simulator to republish discovery. |
-| HTTP works but external browser times out                               | Use the working VS Code browser; this does not justify claiming external-browser compatibility.                                     |
-| Exit 137                                                                | Inspect `docker inspect CONTAINER --format '{{.State.OOMKilled}}'` and memory use before diagnosing OOM.                            |
+| Symptom                                                                 | Check and action                                                                                                                                                               |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Docker unavailable in WSL                                               | Open Docker Desktop and enable integration for the active distro.                                                                                                              |
+| Port already allocated                                                  | Identify its owner with `docker ps`; choose an unused port rather than stopping unrelated services.                                                                            |
+| Build or initialization fails                                           | Inspect the last failing command; do not continue to the next stage or reset data.                                                                                             |
+| Service exits                                                           | Run `docker compose ps -a` and `docker compose logs --tail=80 SERVICE`.                                                                                                        |
+| Missing adapter key                                                     | Complete the explicit initialization/provisioning step; never put the key in frontend configuration.                                                                           |
+| Adapter `configuration_error` or `paused`                               | Check company key, enabled plugin, node and adapter binding; restart only after correcting configuration.                                                                      |
+| Adapter rejects initial attributes with HTTP409 after simulator restart | The adapter defers new-session metadata until a summary is accepted. A remaining conflict needs session/provisioning reconciliation; inspect logs and preserve queue data.     |
+| MPM reports stale integration                                           | Check adapter HTTP delivery, clock and the age of the original source check. The UI expires checks after 150 seconds; new telemetry alone cannot refresh an undelivered check. |
+| Adapter `storage_failed` or `startup_failed` after an update            | Preserve `adapter_data`; check disk space, state binding and write permissions. Never substitute an empty state file.                                                          |
+| HA has no battery                                                       | Confirm MQTT integration is connected to `mqtt:1883`; inspect simulator logs and restart only the simulator to republish discovery.                                            |
+| HTTP works but external browser times out                               | Use the working VS Code browser; this does not justify claiming external-browser compatibility.                                                                                |
+| Exit 137                                                                | Inspect `docker inspect CONTAINER --format '{{.State.OOMKilled}}'` and memory use before diagnosing OOM.                                                                       |
 
 The inherited frontend default test command references a missing `setupTests.js`; the plugin has a separate documented test configuration.
 Non-English battery strings currently use English placeholders.

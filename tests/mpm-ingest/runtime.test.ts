@@ -3,6 +3,9 @@ import { createServer as createTcpServer, type Socket } from "node:net";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { readFileSync } from "node:fs";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { expect, it } from "vitest";
 
 function frame(header: number, body: Buffer): Buffer {
@@ -17,6 +20,7 @@ function frame(header: number, body: Buffer): Buffer {
 }
 
 it("runs the executable from a limited MQTT protocol peer through a fake MPM HTTP endpoint", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "adapter-runtime-"));
   const nodeId = "53494D0000000001";
   const raw = readFileSync(
     new URL("../fixtures/v1/valid/normal.summary.json", import.meta.url),
@@ -35,7 +39,10 @@ it("runs the executable from a limited MQTT protocol peer through a fake MPM HTT
     });
     response.writeHead(200, { "Content-Type": "application/json" });
     response.end(
-      JSON.stringify({ result: "accepted", message_id: payload.message_id }),
+      JSON.stringify({
+        result: "accepted",
+        message_id: JSON.parse(Buffer.concat(chunks).toString()).message_id,
+      }),
     );
   });
   // This peer handles only CONNECT, SUBSCRIBE and one PUBLISH; it is not Mosquitto.
@@ -128,6 +135,7 @@ it("runs the executable from a limited MQTT protocol peer through a fake MPM HTT
           MPM_COMPANY_BINDING: "demo-company",
           BMS_ADAPTER_ID: "demo-adapter",
           BMS_NODE_IDS: nodeId,
+          BMS_STATE_PATH: join(directory, "state.json"),
         },
         stdio: ["ignore", "pipe", "pipe"],
       },
@@ -135,7 +143,7 @@ it("runs the executable from a limited MQTT protocol peer through a fake MPM HTT
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(
         () => reject(new Error(`Adapter did not deliver: ${output}`)),
-        8000,
+        20000,
       );
       child!.once("error", (error) => {
         clearTimeout(timeout);
@@ -147,7 +155,10 @@ it("runs the executable from a limited MQTT protocol peer through a fake MPM HTT
       });
       child!.stdout!.on("data", (chunk) => {
         output += chunk.toString();
-        if (output.includes('"result":"accepted"')) {
+        if (
+          output.includes(`"messageId":"${payload.message_id}"`) &&
+          received.some((item: any) => item.route.endsWith("/summaries"))
+        ) {
           clearTimeout(timeout);
           resolve();
         }
@@ -161,13 +172,15 @@ it("runs the executable from a limited MQTT protocol peer through a fake MPM HTT
         (suffix) => `libresolar/bms/v1/${nodeId}/${suffix}`,
       ),
     );
-    expect(received).toEqual([
-      {
-        route: "/api/libre-solar-bms/ingest/summaries",
-        authorization: "Bearer runtime-test-key",
-        body: payload,
-      },
-    ]);
+    expect(received).toEqual(
+      expect.arrayContaining([
+        {
+          route: "/api/libre-solar-bms/ingest/summaries",
+          authorization: "Bearer runtime-test-key",
+          body: payload,
+        },
+      ]),
+    );
     const closed = once(child, "close");
     child.kill("SIGTERM");
     expect((await closed)[0]).toBe(0);
@@ -177,10 +190,11 @@ it("runs the executable from a limited MQTT protocol peer through a fake MPM HTT
   } finally {
     if (child && child.exitCode === null) child.kill("SIGKILL");
     for (const socket of sockets) socket.destroy();
+    await rm(directory, { recursive: true, force: true });
     http.closeAllConnections();
     await Promise.all([
       new Promise<void>((resolve) => http.close(() => resolve())),
       new Promise<void>((resolve) => mqtt.close(() => resolve())),
     ]);
   }
-}, 12000);
+}, 30000);

@@ -57,10 +57,11 @@ The simulator, MQTT contract, discovery publisher, adapter, backend and screens 
 The combined Compose workflow is undergoing verification; consult the [verification record](docs/evidence/delivery.md) for actual results.
 Code presence and unit tests alone do not establish a working full demonstration.
 
-The adapter currently forwards summaries, events and attributes.
-It does not persist pending HTTP work, issue event receipts, or deliver source-freshness heartbeats.
-MPM therefore may show stale integration even while new summaries arrive.
-The simulator retains unacknowledged events; repeated delivery is handled by MPM’s event identity checks, but complete outage recovery is not guaranteed.
+The adapter persists pending deliveries in SQLite, retries transient backend failures, and acknowledges events only after local commit.
+New-session metadata waits for its summary to establish the backend session.
+Source checks use new telemetry, become stale after 15 seconds of silence, and keep their original check times on retries.
+Keep the `adapter_data` volume: it contains acknowledged events awaiting backend delivery and the durable status revision.
+See [adapter operations](docs/mpm-ingest.md) for capacity, quarantine and recovery instructions.
 Hardware transport and Prospect integration are not demonstrated.
 This local HTTP setup is a demonstration, not a production deployment.
 

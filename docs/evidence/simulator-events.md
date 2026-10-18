@@ -36,8 +36,8 @@ The existing simulator MQTT regression also passed.
 
 ## Delivery boundary
 
-The production adapter forwards events to MPM but does not publish `stored` receipts or persist its HTTP delivery queue.
+The adapter revision used for this historical harness did not publish `stored` receipts or persist its HTTP delivery queue.
 The harness therefore establishes producer outbox/receipt behavior against the test double, not complete adapter/MPM recovery or exactly-once database effects.
-The missing-receipt behavior remains visible in [the adapter guide](../mpm-ingest.md).
+The current adapter implements both; see [its operational guide](../mpm-ingest.md) and [current verification](delivery.md).
 Outbox capacity exhaustion preserves existing records and reports `outbox_capacity_exceeded`.
 Missing fault masks stay unknown; observation gaps do not invent fault or recovery transitions.

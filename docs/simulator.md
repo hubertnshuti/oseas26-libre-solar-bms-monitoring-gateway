@@ -17,8 +17,8 @@ validates and publishes those messages, records observation-based fault events,
 and maintains a bounded persistent producer outbox.
 
 The MQTT-to-MPM adapter is a separate consumer. The current adapter
-forwards summaries/events but does not publish durable `stored` receipts. The
-producer therefore retains unacknowledged events. The receipt/restart broker
+persists summaries/events and publishes `stored` receipts after committing events to its SQLite queue. The
+producer retains unacknowledged events until the configured adapter receipt arrives. The receipt/restart broker
 tests use a faithful adapter test double; they do not prove MPM database
 storage. Home Assistant is a read-only consumer for frequent measurements and
 history. Discovery is included; neither consumer changes the v1 message contract.

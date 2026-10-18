@@ -72,5 +72,5 @@ Only claim this check passed after comparing the actual results.
 See [current verification](evidence/delivery.md) and [earlier component evidence](evidence/home-assistant-discovery.md).
 
 Home Assistant receives measurements directly from MQTT.
-It does not depend on the MPM adapter's HTTP delivery or its unfinished status/receipt features.
+It does not depend on the MPM adapter's HTTP delivery, status checks or event receipts.
 Hardware transport has not been verified.

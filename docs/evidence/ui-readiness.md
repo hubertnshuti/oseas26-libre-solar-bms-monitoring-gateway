@@ -29,7 +29,7 @@ Zero remains a value; missing and unsupported measurements remain unavailable.
 Both battery list and detail age the original integration check using the backend-provided threshold.
 A stale or absent integration check does not imply a current connection.
 
-The gateway adapter in this release still lacks durable HTTP delivery and source-status heartbeats.
+The gateway adapter selected by the UI-only release lacked durable HTTP delivery and source-status heartbeats.
 Consequently, source details can remain unavailable after the known initial-metadata session conflict, and integration status can remain stale while summaries arrive.
-Those transport repairs are separate from this verified UI change.
+Later transport repairs and their verification are recorded in [adapter recovery](adapter-recovery.md).
 Hardware transport and Prospect integration remain outside the demonstrated path.

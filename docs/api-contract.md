@@ -3,7 +3,8 @@
 The pinned MPM submodule implements the battery ingestion and read endpoints described here.
 Examples live in `tests/fixtures/v1/api/`; write payloads use the matching versioned schemas and fixtures.
 The response/retry and freshness policies below describe the interface requirements.
-The current gateway adapter forwards summaries, events, and attributes, but does not yet implement durable retries, stored receipts, or source-status delivery.
+The gateway adapter durably queues summaries, events, attributes and source checks, retries transient HTTP failures and issues event receipts after local commit.
+See [adapter operations](mpm-ingest.md) for capacity, quarantine and recovery behavior.
 
 ## Ownership and authentication
 
@@ -159,5 +160,5 @@ Draft 2020-12 and asserts formats. Do not maintain independently edited payloads
 Updating a PHP copy requires a reviewed gateway commit and new provenance.
 
 Backend verification must cover tenant isolation with two companies sharing a node string, route resolution, provisioning, duplicates/conflicts, ordering, and status-check ageing.
-Concurrent delivery and lost-response recovery need dedicated integration checks in addition to fixture tests.
+Concurrent delivery and lost-response recovery require dedicated integration checks in addition to fixture tests; consult the verification record for the checks actually executed.
 See [the contract decision record](decisions/0002-message-contract-v1.md) and [delivery verification](evidence/delivery.md) for current boundaries.
