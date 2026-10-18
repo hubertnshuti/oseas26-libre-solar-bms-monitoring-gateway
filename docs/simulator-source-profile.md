@@ -405,7 +405,7 @@ The table below explains what each metric means in plain English, how it should 
 
 1. **Firmware Mismatch Open Question:** In the Texas Instruments BQ769x2 driver, PACK and STACK pin bindings differ between firmware revisions. Both fields remain strictly separate; no single "terminal voltage" is guessed.
 2. **SoH and Cycles:** Because the pinned Libre Solar firmware does not calculate state of health or cycle counts, both are null. UI must display "Not Supported" rather than "0%".
-3. **Event delivery:** The simulator has a persistent file-backed outbox. The current adapter lacks durable HTTP retries and stored-event receipts; end-to-end outage recovery remains incomplete.
+3. **Event delivery:** The simulator has a persistent file-backed outbox. The adapter commits events to its durable SQLite queue before publishing stored receipts and retries transient backend failures. See the delivery evidence for tested recovery boundaries.
 
 ---
 

@@ -2,6 +2,7 @@
 
 Reviewed gateway revision: `fe08f88fbd0d1f91377eb8f200f1d18cb40f200a`.
 MPM runtime used for the recorded delivery: `9b102f2526167d18fb2e03f4aad297351a4eeef2`.
+The table below is historical evidence for the listed revisions.
 Results below combine the 15 October integration recording, 16 October gateway checks, and supplied application screenshots.
 They are not a fresh acceptance run of every component.
 
@@ -20,14 +21,14 @@ They are not a fresh acceptance run of every component.
 | Combined clean installation       | Not verified           | Public installation workflow has not been independently executed with fresh data.                                      |
 | Full outage recovery              | Not implemented        | Adapter durable retries, receipts, and source-status delivery are incomplete.                                          |
 
-## Integration limitations
+## Limitations of the original recording
 
 The recorded combined rehearsal reused an existing initialized backend with a private local Compose override.
 This does not establish an independent clean installation.
-On a new simulator session, initial metadata may receive HTTP 409 before the following summary promotes that session.
-Summary updates then succeed, but automatic metadata recovery is incomplete.
+In the recorded adapter revision, new-session metadata could receive HTTP 409 before the following summary promotes that session.
+Summary updates then succeeded, but metadata recovery was incomplete.
 
-The adapter does not deliver source-status heartbeats, so MPM can report stale integration while receiving new summaries.
+That revision did not deliver source-status heartbeats, so MPM could report stale integration while receiving new summaries.
 This state remains visible in the supplied screenshots.
 The short overvoltage scenario is active approximately from second 2 to second 8; MPM's 60-second polling can miss the active summary while stored events remain available.
 
@@ -38,3 +39,8 @@ Earlier component evidence retains its original verification scope and revisions
 
 The [setup and display verification](ui-readiness.md) records the later MPM corrections and their own test scope.
 The original results above retain their recorded revisions.
+
+## Adapter delivery recovery
+
+The [adapter recovery record](adapter-recovery.md) documents the later durable queue, metadata recovery and source checks against the actual MPM HTTP kernel and an isolated MySQL database.
+It does not replace the historical clean-install or browser results above.

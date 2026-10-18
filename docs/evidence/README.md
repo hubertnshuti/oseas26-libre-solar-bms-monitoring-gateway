@@ -4,6 +4,8 @@ Each record identifies its test environment, observed results, and limits.
 Historical component checks should not be treated as proof of a current full-stack acceptance run.
 
 - [Combined delivery and remaining checks](delivery.md)
+- [Durable adapter recovery and real MPM checks](adapter-recovery.md)
+- [Setup and display verification](ui-readiness.md)
 - [Actual simulator-to-MPM API capture](delivery-api.json)
 - [Application screenshots](screenshots/README.md)
 - [Contract validation](contract-validation.md)
