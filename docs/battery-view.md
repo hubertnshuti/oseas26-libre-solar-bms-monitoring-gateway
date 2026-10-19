@@ -16,17 +16,17 @@ Errors remain visible with a retry action; an empty or failed read cannot comple
 
 ## Measurements and interpretation
 
-| Display                         | API source                           | Meaning                                                                                         |
-| ------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| Battery identity                | Battery label and `node_id`          | Provisioned asset and MQTT source                                                               |
-| Data source                     | `source`                             | Explicit simulation or hardware marker                                                          |
-| State of charge                 | `summary.soc`                        | Reported percentage displayed to at most two decimal places, not an estimate of state of health |
-| State of health / cycle count   | `summary.soh`, `summary.cycle_count` | Unsupported by the demo profile; shown as unavailable                                           |
-| Cell imbalance                  | `summary.cell_voltage_delta`         | Difference between the highest and lowest configured cell voltage                               |
-| Maximum battery temperature     | `summary.cell_temperature_max`       | Highest configured battery-sensor reading                                                       |
-| Maximum electronics temperature | `summary.component_temperature_max`  | Highest supported electronics-sensor reading                                                    |
-| BMS state and faults            | State code, flags, decoded faults    | Last observed source state and fault assessment                                                 |
-| Observation time                | `summary.observed_at`                | When the displayed measurement was observed                                                     |
+| Display                         | API source                           | Meaning                                                                                        |
+| ------------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| Battery identity                | Battery label and `node_id`          | Provisioned asset and MQTT source                                                              |
+| Data source                     | `source`                             | Explicit simulation or hardware marker                                                         |
+| State of charge                 | `summary.soc`                        | Reported percentage displayed to at most one decimal place, not an estimate of state of health |
+| State of health / cycle count   | `summary.soh`, `summary.cycle_count` | Unsupported by the demo profile; shown as unavailable                                          |
+| Cell imbalance                  | `summary.cell_voltage_delta`         | Difference between the highest and lowest configured cell voltage                              |
+| Maximum battery temperature     | `summary.cell_temperature_max`       | Highest configured battery-sensor reading                                                      |
+| Maximum electronics temperature | `summary.component_temperature_max`  | Highest supported electronics-sensor reading                                                   |
+| BMS state and faults            | State code, flags, decoded faults    | Last observed source state and fault assessment                                                |
+| Observation time                | `summary.observed_at`                | When the displayed measurement was observed                                                    |
 
 Missing or unsupported measurements remain unavailable with their quality reason.
 A real zero keeps its value and unit.

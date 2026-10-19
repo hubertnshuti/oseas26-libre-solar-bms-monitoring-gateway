@@ -24,7 +24,8 @@ Opening plugin setup displays a compact access/provisioning check.
 Completion is enabled only after a successful read returns at least one provisioned battery.
 The ordinary battery dashboard and detail pages are displayed outside the setup dialog.
 
-Measurements display at most two decimal places while API and stored values retain their original precision.
+Percentages and temperatures display at most one decimal place; voltage/current values retain up to three decimal places so small differences remain visible.
+API and stored values retain their original precision.
 Zero remains a value; missing and unsupported measurements remain unavailable.
 Both battery list and detail age the original integration check using the backend-provided threshold.
 A stale or absent integration check does not imply a current connection.
