@@ -39,7 +39,19 @@ case "${1:-}" in
     docker compose up -d --wait --wait-timeout 180 mysql redis
     docker compose run --rm --no-deps initialize
     docker compose up -d --wait --wait-timeout 300
-    echo 'Services started. Complete Home Assistant onboarding using docs/quickstart.md.'
+    echo 'Services started. Run bash deploy/demo.sh verify, then follow docs/quickstart.md for browser login and Home Assistant onboarding.'
+    ;;
+  verify)
+    docker compose config --quiet
+    for service in mysql redis mqtt backend horizon frontend adapter simulator homeassistant; do
+      container=$(docker compose ps -a -q "$service")
+      [[ -n "$container" ]] || { echo "Missing service: $service. Complete installation first." >&2; exit 1; }
+      state=$(docker inspect --format '{{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{end}}' "$container")
+      [[ "$state" == 'running ' || "$state" == 'running healthy' ]] || { echo "Service $service is $state; inspect docker compose logs $service." >&2; exit 1; }
+    done
+    echo 'PASS all nine runtime services running; configured healthchecks healthy'
+    docker compose exec -T horizon php artisan horizon:status
+    docker compose exec -T backend php < deploy/verify-demo.php
     ;;
   scenario)
     scenario=${2:-}
@@ -51,7 +63,7 @@ case "${1:-}" in
     SIMULATOR_SCENARIO="$scenario" docker compose up -d --no-deps --force-recreate simulator
     ;;
   *)
-    echo 'Usage: bash deploy/demo.sh configure|install|scenario SCENARIO' >&2
+    echo 'Usage: bash deploy/demo.sh configure|install|verify|scenario SCENARIO' >&2
     exit 1
     ;;
 esac

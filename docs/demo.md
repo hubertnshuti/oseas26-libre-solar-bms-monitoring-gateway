@@ -10,6 +10,7 @@ From the gateway root:
 ```bash
 docker compose up -d --wait --wait-timeout 300
 bash deploy/demo.sh scenario normal-cycle
+bash deploy/demo.sh verify
 docker compose ps
 docker compose logs --tail=20 adapter
 ```

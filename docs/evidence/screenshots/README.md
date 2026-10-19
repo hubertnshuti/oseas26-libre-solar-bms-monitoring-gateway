@@ -1,5 +1,15 @@
 # Application screenshots
 
+## Verified installation on 19 October 2026
+
+- [Battery list](05-mpm-verified-list.png): simulated node, rounded state of charge, fresh source assessment and recent integration check.
+- [Battery detail and fault history](06-mpm-verified-detail.png): source metadata, unsupported measurements, and stored overvoltage/clearance events.
+
+These captures come from the [fresh installation verification](../clean-install.md) at its recorded revisions.
+They show the running application without fixture interception.
+
+## Earlier captures
+
 These captures show the local simulated demonstration in MicroPowerManager and Home Assistant.
 The images preserve the original application display, including unavailable measurements and integration-status limitations.
 
