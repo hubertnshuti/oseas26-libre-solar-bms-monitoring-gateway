@@ -53,6 +53,8 @@ bash deploy/demo.sh install
 
 Expected: each build/initialization command succeeds, then Compose reports healthy HTTP/database/broker services.
 If a step fails, the script stops; inspect the error and retain its data for diagnosis.
+If Docker disconnects after provisioning has completed and `.demo/adapter.key` exists, restore Docker and use the ordinary startup command below.
+Do not delete volumes or generate a second database to recover an interrupted startup.
 The installer does not erase databases or volumes.
 Initialization is explicit; ordinary startup never migrates or seeds.
 Provisioning preserves an existing battery and reuses its existing active private key.
@@ -66,11 +68,30 @@ After changing `MPM_BACKEND_PORT`, rebuild with `docker compose build frontend` 
 Internal connections use `mqtt:1883`, `backend:8000`, `mysql:3306` and `redis:6379`.
 Do not substitute browser localhost URLs for those container addresses.
 
+## Confirm live delivery
+
+Keep the default `normal-cycle` scenario running and execute:
+
+```bash
+bash deploy/demo.sh verify
+```
+
+Expected: all nine runtime services are running, configured healthchecks pass, Horizon is running, and each API check prints `PASS`.
+The check signs into the actual backend, reads the simulated battery and its events, and waits up to 90 seconds for a recent summary, source metadata and a fresh source assessment.
+Unsupported state of health and cycle count must remain null with an explicit quality reason.
+It exits unsuccessfully if a service is stopped or delivery is incomplete; a running adapter alone cannot pass.
+It does not print passwords, API keys or login tokens, and requires no host PHP or Node installation.
+
+For a normal-operation check after a failure scenario, first run `bash deploy/demo.sh scenario normal-cycle`.
+Browser display and Home Assistant onboarding are separate checks below.
+
 ## First browser login
 
-Open http://localhost:18081 for MPM, adjusting the port if configured differently.
-The initialized account is MPM's published local demo administrator; its email and password are defined in `external/micropowermanager/src/backend/app/Utils/DemoCompany.php` as `DEMO_COMPANY_ADMIN_EMAIL` and `DEMO_COMPANY_PASSWORD`.
-Use those values locally; do not include them in screenshots or presentation slides.
+Open http://localhost:18081 for MPM, adjusting the port if configured differently, and choose **Sign in** on the welcome page.
+The direct login URL is http://localhost:18081/#/login.
+Use MPM's published local demo account: email `demo_company_admin@example.com`, password `123123`.
+These values are defined in `external/micropowermanager/src/backend/app/Utils/DemoCompany.php`; they are for this localhost demonstration only.
+The installer generates separate private database, MQTT and adapter credentials.
 Open the Libre Solar BMS plugin.
 If the setup dialog appears, choose Refresh, then Finish plugin setup after the readiness check succeeds.
 An empty list means provisioning is missing; an access error requires the correct account permissions.

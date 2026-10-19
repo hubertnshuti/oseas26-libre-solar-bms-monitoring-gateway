@@ -27,3 +27,5 @@ jobs:
       - run: npm run format:check
 
       - run: npm test
+      - run: bash -n deploy/demo.sh
+      - run: docker compose --env-file .env.example config --quiet

@@ -30,6 +30,7 @@ Review `.env` for an unused project name and ports, then install:
 
 ```bash
 bash deploy/demo.sh install
+bash deploy/demo.sh verify
 ```
 
 Follow the [first-installation guide](docs/quickstart.md) for login, Home Assistant configuration and troubleshooting.
@@ -54,8 +55,9 @@ The MPM submodule pins the backend and battery screens to the revision recorded 
 Run `git submodule status` to inspect that exact revision; the installer checks it before building.
 The battery screens provide a compact setup check, readable measurement precision and independently aging integration status.
 The simulator, MQTT contract, discovery publisher, adapter, backend and screens are implemented.
-The combined Compose workflow is undergoing verification; consult the [verification record](docs/evidence/delivery.md) for actual results.
-Code presence and unit tests alone do not establish a working full demonstration.
+A separate public checkout with fresh database and service volumes has passed installation, live battery delivery and authenticated API checks.
+`bash deploy/demo.sh verify` checks the running services and actual battery data without requiring host development tools.
+See the [clean-install verification](docs/evidence/clean-install.md) for the tested revision, browser results and remaining scope.
 
 The adapter persists pending deliveries in SQLite, retries transient backend failures, and acknowledges events only after local commit.
 New-session metadata waits for its summary to establish the backend session.

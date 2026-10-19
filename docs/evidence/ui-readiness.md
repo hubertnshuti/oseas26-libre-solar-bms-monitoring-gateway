@@ -16,7 +16,7 @@ It also clarifies the local installation workflow and prevents separate Compose 
 
 Focused Vue tests execute component scripts and presentation logic; they do not mount templates.
 A successful production build establishes compilation, not complete browser acceptance.
-Fresh installation and browser results will be recorded here when executed.
+Subsequent live installation and browser results are recorded in [clean-install verification](clean-install.md).
 
 ## Expected behavior
 

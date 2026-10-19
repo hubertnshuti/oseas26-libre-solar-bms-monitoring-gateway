@@ -1,5 +1,8 @@
 # Delivery verification
 
+The latest [clean-install verification](clean-install.md) covers the public checkout, fresh service volumes, live readiness checks and browser results.
+The tables below retain the scope and limitations of the earlier recording.
+
 Reviewed gateway revision: `fe08f88fbd0d1f91377eb8f200f1d18cb40f200a`.
 MPM runtime used for the recorded delivery: `9b102f2526167d18fb2e03f4aad297351a4eeef2`.
 The table below is historical evidence for the listed revisions.
